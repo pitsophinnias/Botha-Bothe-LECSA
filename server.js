@@ -25,13 +25,29 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Initialize PostgreSQL connection pool
-const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'lecsachurch',
-    password: process.env.PG_PASSWORD || 'pitso2003',
-    port: 5432
-});
+// Initialize PostgreSQL connection pool
+let pool;
+
+if (process.env.DATABASE_URL) {
+    // Production: Use DATABASE_URL from Render
+    console.log('Using DATABASE_URL for connection');
+    pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+            rejectUnauthorized: false // Required for Render PostgreSQL
+        }
+    });
+} else {
+    // Development: Use local connection
+    console.log('Using local database connection');
+    pool = new Pool({
+        user: 'postgres',
+        host: 'localhost',
+        database: 'lecsachurch',
+        password: process.env.PG_PASSWORD || 'pitso2003',
+        port: 5432
+    });
+}
 
 // Verify database connection
 pool.connect((err) => {
