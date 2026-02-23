@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LECSA Church - Kabelo Register</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+</head>
+<body>
+    <div class="header-wrapper">
+        <div class="side-menu" id="sidebar">
+            <div class="menu-logo">
+                <img src="images/logo.jpg" alt="LECSA Logo">
+                <span>LECSA Menu</span>
+            </div>
+            <a href="regsys.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+            <a href="manyalo.html"><i class="fas fa-ring"></i><span>Manyalo</span></a>
+            <a href="likolobetso.html"><i class="fas fa-cross"></i><span>Likolobetso</span></a>
+            <a href="financials.html"><i class="fas fa-money-bill"></i><span>Financials</span></a>
+            <a href="archives.html"><i class="fas fa-archive"></i><span>Archives</span></a>
+            <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            <div class="menu-close" id="menuClose"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="menu-toggle" id="toggleSidebar"><i class="fas fa-bars"></i></div>
+        <div id="content" class="kabelo-section">
+            <h1>Kabelo Register</h1>
+            <div class="search-container">
+                <input type="text" id="search" placeholder="Search members...">
+            </div>
+            <h2>Register New Member</h2>
+            <form id="memberForm">
+                <div>
+                    <label for="lebitso">Lebitso:</label>
+                    <input type="text" id="lebitso" name="lebitso" required>
+                </div>
+                <div>
+                    <label for="fane">Fane:</label>
+                    <input type="text" id="fane" name="fane" required>
+                </div>
+                <button type="submit" class="action-button">Register</button>
+                <p id="error" class="error"></p>
+            </form>
+            <!-- Update the table header in kabelo.html -->
+			<h2>Current Members <span id="totalCount" class="total-count">Loading...</span></h2>
+            <table id="membersList">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>First Name</th>
+						<th>Last Name</th>
+						<th>Gender</th>
+						<th>Phone</th>
+						<th>Role</th>
+						<th>Location</th>
+						<th>Date Joined</th>
+						<th>Receipt #</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody>
+				<!-- Will be populated by JavaScript -->
+				</tbody>
+			</table>
+        </div>
+    </div>
+    <script src="kabelo.js"></script>
+	<script src="sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LECSA Weddings</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+</head>
+<body>
+    <div class="header-wrapper">
+        <div class="side-menu" id="sidebar">
+            <div class="menu-logo">
+                <img src="images/logo.jpg" alt="LECSA Logo">
+                <span>LECSA Menu</span>
+            </div>
+            <a href="regsys.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+            <a href="kabelo.html"><i class="fas fa-home"></i><span>Kabelo Register</span></a>
+            <a href="likolobetso.html"><i class="fas fa-cross"></i><span>Likolobetso</span></a>
+            <a href="financials.html"><i class="fas fa-money-bill"></i><span>Financials</span></a>
+            <a href="archives.html"><i class="fas fa-archive"></i><span>Archives</span></a>
+			<a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            <div class="menu-close" id="menuClose"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="menu-toggle" id="toggleSidebar"><i class="fas fa-bars"></i></div>
+        <div id="content" class="manyalo-section">
+            <h1>Manyalo (Weddings)</h1>
+            <div id="error"></div>
+            <h2>Record Wedding</h2>
+            <form id="weddingForm">
+				<div>
+					<label for="groom_first_name">Groom Lebitso:</label>
+					<input type="text" id="groom_first_name" name="groom_first_name" required>
+				</div>
+				<div>
+					<label for="groom_middle_name">Groom La Kereke (Optional):</label>
+					<input type="text" id="groom_middle_name" name="groom_middle_name">
+				</div>
+				<div>
+					<label for="groom_surname">Groom Fane:</label>
+					<input type="text" id="groom_surname" name="groom_surname" required>
+				</div>
+				<div>
+					<label for="groom_id_number">Groom ID Number:</label>
+					<input type="text" id="groom_id_number" name="groom_id_number">
+				</div>
+				<div>
+					<label for="bride_first_name">Bride Lebitso:</label>
+					<input type="text" id="bride_first_name" name="bride_first_name" required>
+				</div>
+				<div>
+					<label for="bride_middle_name">Bride La Kereke (Optional):</label>
+					<input type="text" id="bride_middle_name" name="bride_middle_name">
+				</div>
+				<div>
+					<label for="bride_surname">Bride Fane:</label>
+					<input type="text" id="bride_surname" name="bride_surname" required>
+				</div>
+				<div>
+					<label for="bride_id_number">Bride ID Number:</label>
+					<input type="text" id="bride_id_number" name="bride_id_number">
+				</div>
+				<div>
+					<label for="wedding_date">Wedding Date:</label>
+					<input type="date" id="wedding_date" name="wedding_date" required>
+				</div>
+				<div>
+					<label for="pastor">Moruti:</label>
+					<input type="text" id="pastor" name="pastor" required>
+				</div>
+				<div>
+					<label for="location">Location:</label>
+					<input type="text" id="location" name="location" required>
+				</div>
+				<button type="submit" class="action-button">Record</button>
+			</form>
+            <div class="search-container">
+                <input type="text" id="search" placeholder="Search weddings...">
+            </div>
+            <h2>Wedding Records</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Groom</th>
+                        <th>Bride</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="weddingList"></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="manyalo.js"></script>
+	<script src="sidebar.js"></script>
+<footer>
+    <p>Copyright &copy; 2026 LECSA Botha-Bothe. All rights reserved.</p>
+    <div class="social-icons">
+        <a href="https://facebook.com/botha-bothelecsa" target="_blank"><i class="fa fa-facebook"></i></a>
+        <a href="https://twitter.com/botha-bothelecsa" target="_blank"><i class="fa fa-twitter"></i></a>
+        <a href="https://instagram.com/botha-bothelecsa" target="_blank"><i class="fa fa-instagram"></i></a>
+    </div>
+</footer>
+</body>
+</html>

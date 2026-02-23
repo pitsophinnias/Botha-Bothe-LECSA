@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LECSA Church - Registration</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="home-icon"><i class="fas fa-home"></i></a>
+        <section class="login-section">
+            <h2>LECSA Church Registration</h2>
+            <form id="register-form" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="confirm-password" required minlength="6">
+                </div>
+                <button type="submit" class="btn">Register</button>
+                <p id="register-error" style="color: var(--danger-color); display: none;"></p>
+                <p><a href="login.html" class="register-link">Already have an account? Login here</a></p>
+            </form>
+        </section>
+    </div>
+    <script src="register.js"></script>
+<footer>
+    <p>Copyright &copy; 2026 LECSA Botha-Bothe. All rights reserved.</p>
+    <div class="social-icons">
+        <a href="https://facebook.com/botha-bothelecsa" target="_blank"><i class="fa fa-facebook"></i></a>
+        <a href="https://twitter.com/botha-bothelecsa" target="_blank"><i class="fa fa-twitter"></i></a>
+        <a href="https://instagram.com/botha-bothelecsa" target="_blank"><i class="fa fa-instagram"></i></a>
+    </div>
+</footer>
+</body>
+</html>

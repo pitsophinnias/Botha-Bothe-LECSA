@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LECSA Financials</title>
+    <style>
+        table { width: 100%; border-collapse: collapse;}
+        th, td {border: 1px solid #ccc; padding: 8px; text-align: left; }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+    
+</head>
+<body>
+    <div class="header-wrapper">
+        <div class="side-menu" id="sidebar">
+            <div class="menu-logo">
+                <img src="images/logo.jpg" alt="LECSA Logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIGZpbGw9IiMzMTc4QkQiLz48dGV4dCB4PSIyMCIgeT0iMjIiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkxFQ1NBPC90ZXh0Pjwvc3ZnPg=='; this.alt='LECSA Logo (Placeholder)'">
+                <span>LECSA Menu</span>
+            </div>
+            <a href="regsys.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+            <a href="kabelo.html"><i class="fas fa-home"></i><span>Kabelo Register</span></a>
+            <a href="likolobetso.html"><i class="fas fa-cross"></i><span>Likolobetso</span></a>
+            <a href="manyalo.html"><i class="fas fa-ring"></i><span>Manyalo</span></a>
+            <a href="archives.html"><i class="fas fa-archive"></i><span>Archives</span></a>
+            <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            <div class="menu-close" id="menuClose"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="menu-toggle" id="toggleSidebar"><i class="fas fa-bars"></i></div>
+        <div class="financials-section" id="content">
+            <h2>Financial Records</h2>
+            
+            <!-- Weekly Book Status -->
+            <div class="week-status">
+                <h3>Current Week Status</h3>
+                <div id="currentWeekInfo">
+                    <p><strong>Week Starting:</strong> <span id="currentWeekStart">Not set</span></p>
+                    <p><strong>Status:</strong> <span id="weekStatus" class="status-open">Open</span></p>
+                    <p><strong>Transactions this week:</strong> <span id="transactionCount">0</span></p>
+                    <p><strong>Weekly Total:</strong> <span id="weeklyTotal">LSL 0.00</span></p>
+                </div>
+            </div>
+            
+            <div class="financial-input">
+                <h3>Add Weekly Transaction</h3>
+                <form id="financialForm">
+                    <div>
+                        <label for="weekStart">Week Starting (Monday)</label>
+                        <input type="date" id="weekStart" required>
+                        <small class="form-help">Select the Monday for this week's report</small>
+                    </div>
+                    <div>
+                        <label for="transactionDate">Transaction Date</label>
+                        <input type="date" id="transactionDate" required>
+                    </div>
+                    <div>
+                        <label for="description">Description</label>
+                        <input type="text" id="description" placeholder="e.g., Sunday Offering, Utilities Payment" required>
+                    </div>
+                    <div>
+                        <label for="category">Category</label>
+                        <select id="category" required>
+                            <option value="">Select Category</option>
+                            <optgroup label="Income">
+                                <option value="Offering">Sunday Offering</option>
+                                <option value="Tithe">Tithe</option>
+                                <option value="Donation">Donation</option>
+                                <option value="Special Offering">Special Offering</option>
+                                <option value="Event Income">Event Income</option>
+                                <option value="Other Income">Other Income</option>
+                            </optgroup>
+                            <optgroup label="Expense">
+                                <option value="Utilities">Utilities (Water/Electricity)</option>
+                                <option value="Maintenance">Maintenance</option>
+                                <option value="Staff">Staff Expenses</option>
+                                <option value="Supplies">Church Supplies</option>
+                                <option value="Outreach">Outreach/Mission</option>
+                                <option value="Other Expense">Other Expense</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="amount">Amount (LSL)</label>
+                        <input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    <div>
+                        <label for="reference">Reference Number (Optional)</label>
+                        <input type="text" id="reference" placeholder="Receipt/Invoice #">
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="action-button">Add Transaction</button>
+                        <button type="button" id="finishWeek" class="finish-button" style="display: none;">
+                            <i class="fas fa-lock"></i> Finish Week & Close Book
+                        </button>
+                        <button type="button" id="clearForm" class="clear-button">
+                            <i class="fas fa-times"></i> Clear Form
+                        </button>
+                    </div>
+                    <div id="formMessage" class="form-message"></div>
+                </form>
+            </div>
+            
+            <!-- Quick Summary -->
+            <div class="quick-summary">
+                <h3>Quick Summary</h3>
+                <div class="summary-cards">
+                    <div class="summary-card income">
+                        <h4><i class="fas fa-arrow-up"></i> Total Income</h4>
+                        <p id="totalIncome">LSL 0.00</p>
+                    </div>
+                    <div class="summary-card expense">
+                        <h4><i class="fas fa-arrow-down"></i> Total Expenses</h4>
+                        <p id="totalExpense">LSL 0.00</p>
+                    </div>
+                    <div class="summary-card balance">
+                        <h4><i class="fas fa-balance-scale"></i> Net Balance</h4>
+                        <p id="netBalance">LSL 0.00</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="financial-reports">
+                <h3>Financial Reports</h3>
+                <div class="report-tabs">
+                    <button class="tab-button active" data-tab="weekly">Weekly</button>
+                    <button class="tab-button" data-tab="monthly">Monthly</button>
+                    <button class="tab-button" data-tab="quarterly">Quarterly</button>
+                    <button class="tab-button" data-tab="yearly">Yearly</button>
+                    <button class="tab-button" data-tab="categories">By Category</button>
+                </div>
+                
+                <!-- Weekly Report -->
+                <div id="weeklyReport" class="report-content active">
+                    <div class="report-header">
+                        <h4>Weekly Transactions</h4>
+                        <button class="export-button" data-period="weekly">
+                            <i class="fas fa-download"></i> Export to CSV
+                        </button>
+                    </div>
+                    <table id="weeklyTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th>Amount (LSL)</th>
+                                <th>Reference</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" style="text-align: right; font-weight: bold;">Weekly Total:</td>
+                                <td id="weeklyTableTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Monthly Report -->
+                <div id="monthlyReport" class="report-content">
+                    <div class="report-header">
+                        <h4>Monthly Ledger</h4>
+                        <button class="export-button" data-period="monthly">
+                            <i class="fas fa-download"></i> Export to CSV
+                        </button>
+                    </div>
+                    <table id="monthlyTable">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Income (LSL)</th>
+                                <th>Expenses (LSL)</th>
+                                <th>Balance (LSL)</th>
+                                <th>Transactions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td style="text-align: right; font-weight: bold;">Total:</td>
+                                <td id="monthlyIncomeTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td id="monthlyExpenseTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td id="monthlyBalanceTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Quarterly Report -->
+                <div id="quarterlyReport" class="report-content">
+                    <div class="report-header">
+                        <h4>Quarterly Balance Sheet</h4>
+                        <button class="export-button" data-period="quarterly">
+                            <i class="fas fa-download"></i> Export to CSV
+                        </button>
+                    </div>
+                    <table id="quarterlyTable">
+                        <thead>
+                            <tr>
+                                <th>Quarter</th>
+                                <th>Income (LSL)</th>
+                                <th>Expenses (LSL)</th>
+                                <th>Balance (LSL)</th>
+                                <th>Transactions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td style="text-align: right; font-weight: bold;">Year Total:</td>
+                                <td id="quarterlyIncomeTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td id="quarterlyExpenseTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td id="quarterlyBalanceTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Yearly Report -->
+                <div id="yearlyReport" class="report-content">
+                    <div class="report-header">
+                        <h4>Yearly Financial Statement</h4>
+                        <button class="export-button" data-period="yearly">
+                            <i class="fas fa-download"></i> Export to CSV
+                        </button>
+                    </div>
+                    <table id="yearlyTable">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th>Income (LSL)</th>
+                                <th>Expenses (LSL)</th>
+                                <th>Balance (LSL)</th>
+                                <th>Avg. Monthly</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td style="text-align: right; font-weight: bold;">Total:</td>
+                                <td id="yearlyIncomeTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td id="yearlyExpenseTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td id="yearlyBalanceTotal" style="font-weight: bold;">LSL 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <!-- Category Report -->
+				<div id="categoriesReport" class="report-content">
+					<div class="report-header">
+						<h4>Transactions by Category</h4>
+						<button class="export-button" data-period="categories">
+							<i class="fas fa-download"></i> Export to CSV
+						</button>
+					</div>
+					
+					<!-- Add category summary cards -->
+					<div class="category-summary">
+						<div class="category-card income">
+							<h5><i class="fas fa-arrow-up"></i> Top Income Category</h5>
+							<p id="topIncomeCategory">-</p>
+							<p id="topIncomeAmount">LSL 0.00</p>
+						</div>
+						<div class="category-card expense">
+							<h5><i class="fas fa-arrow-down"></i> Top Expense Category</h5>
+							<p id="topExpenseCategory">-</p>
+							<p id="topExpenseAmount">LSL 0.00</p>
+						</div>
+					</div>
+					
+					<!-- Add the missing table -->
+					<table id="categoriesTable">
+						<thead>
+							<tr>
+								<th>Category</th>
+								<th>Type</th>
+								<th>Transaction Count</th>
+								<th>Total Amount (LSL)</th>
+								<th>% of Type</th>
+								<th>% of Total</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+						<tfoot>
+							<tr>
+								<td colspan="2" style="text-align: right; font-weight: bold;">Total:</td>
+								<td id="categoriesTotalCount" style="font-weight: bold;">0</td>
+								<td id="categoriesTotalAmount" style="font-weight: bold;">LSL 0.00</td>
+								<td colspan="2"></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+            
+            <!-- Closed Weeks Archive -->
+            <div class="closed-weeks">
+                <h3>Closed Weeks Archive</h3>
+                <div class="search-container">
+                    <input type="month" id="monthFilter" placeholder="Filter by month">
+                    <button id="refreshArchive" class="refresh-button">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <table id="closedWeeksTable">
+                    <thead>
+                        <tr>
+                            <th>Week Starting</th>
+                            <th>Week Ending</th>
+                            <th>Total Income</th>
+                            <th>Total Expenses</th>
+                            <th>Net Balance</th>
+                            <th>Closed By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal for Closing Week -->
+    <div id="closeWeekModal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-lock"></i> Close Weekly Book</h3>
+            <p>Are you sure you want to close the weekly book for <strong id="modalWeekStart"></strong>?</p>
+            <p>Once closed, no more transactions can be added for this week.</p>
+            
+            <div class="week-summary">
+                <h4>Week Summary:</h4>
+                <p><strong>Total Transactions:</strong> <span id="modalTransactionCount">0</span></p>
+                <p><strong>Total Income:</strong> <span id="modalTotalIncome">LSL 0.00</span></p>
+                <p><strong>Total Expenses:</strong> <span id="modalTotalExpenses">LSL 0.00</span></p>
+                <p><strong>Net Balance:</strong> <span id="modalNetBalance">LSL 0.00</span></p>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="confirmClose" class="confirm-button">
+                    <i class="fas fa-check"></i> Yes, Close Week
+                </button>
+                <button id="cancelClose" class="cancel-button">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="financials.js"></script>
+    <script src="regsys.js"></script>
+    <script src="sidebar.js"></script>
+    <script>
+            
+            // Auto-set week start to last Monday if not set
+            const weekStartInput = document.getElementById('weekStart');
+            if (weekStartInput && !weekStartInput.value) {
+                const today = new Date();
+                const day = today.getDay();
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+                const lastMonday = new Date(today.setDate(diff));
+                const formattedDate = lastMonday.toISOString().split('T')[0];
+                weekStartInput.value = formattedDate;
+                document.getElementById('transactionDate').min = formattedDate;
+                
+                // Update current week display
+                document.getElementById('currentWeekStart').textContent = 
+                    lastMonday.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            
+            // Setup clear form button
+            const clearFormBtn = document.getElementById('clearForm');
+            if (clearFormBtn) {
+                clearFormBtn.addEventListener('click', function() {
+                    document.getElementById('financialForm').reset();
+                    document.getElementById('formMessage').textContent = '';
+                    document.getElementById('formMessage').className = 'form-message';
+                    
+                    // Reset week start to current Monday
+                    if (weekStartInput) {
+                        const today = new Date();
+                        const day = today.getDay();
+                        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                        const lastMonday = new Date(today.setDate(diff));
+                        weekStartInput.value = lastMonday.toISOString().split('T')[0];
+                    }
+                });
+            }
+            
+            // Setup modal functionality
+            const modal = document.getElementById('closeWeekModal');
+            const finishWeekBtn = document.getElementById('finishWeek');
+            const cancelCloseBtn = document.getElementById('cancelClose');
+            
+            if (finishWeekBtn) {
+                finishWeekBtn.addEventListener('click', function() {
+                    // Calculate week totals for modal
+                    const weekStart = document.getElementById('weekStart').value;
+                    const transactions = getCurrentWeekTransactions();
+                    
+                    document.getElementById('modalWeekStart').textContent = 
+                        new Date(weekStart).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                    
+                    document.getElementById('modalTransactionCount').textContent = transactions.count;
+                    document.getElementById('modalTotalIncome').textContent = formatCurrency(transactions.income);
+                    document.getElementById('modalTotalExpenses').textContent = formatCurrency(transactions.expenses);
+                    document.getElementById('modalNetBalance').textContent = formatCurrency(transactions.balance);
+                    
+                    // Show modal
+                    modal.style.display = 'block';
+                });
+            }
+            
+            if (cancelCloseBtn) {
+                cancelCloseBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                });
+            }
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+        
+        // Helper functions
+        function getCurrentWeekTransactions() {
+            // This would normally fetch from server
+            // For now, return mock data
+            return {
+                count: 5,
+                income: 4500,
+                expenses: 1200,
+                balance: 3300
+            };
+        }
+        
+        function formatCurrency(amount) {
+            return 'LSL ' + parseFloat(amount).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+    </script>
+<footer>
+    <p>Copyright &copy; 2026 LECSA Botha-Bothe. All rights reserved.</p>
+    <div class="social-icons">
+        <a href="https://facebook.com/botha-bothelecsa" target="_blank"><i class="fa fa-facebook"></i></a>
+        <a href="https://twitter.com/botha-bothelecsa" target="_blank"><i class="fa fa-twitter"></i></a>
+        <a href="https://instagram.com/botha-bothelecsa" target="_blank"><i class="fa fa-instagram"></i></a>
+    </div>
+</footer>
+</body>
+</html>

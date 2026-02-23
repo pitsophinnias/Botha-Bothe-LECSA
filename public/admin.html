@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LECSA Church - Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+</head>
+<body>
+    <div class="header-wrapper">
+        <div class="side-menu" id="sidebar">
+            <div class="menu-logo">
+                <img src="images/logo.jpg" alt="LECSA Logo">
+                <span>LECSA Menu</span>
+            </div>
+            <a href="regsys.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+            <a href="kabelo.html"><i class="fas fa-home"></i><span>Kabelo Register</span></a>
+            <a href="likolobetso.html"><i class="fas fa-cross"></i><span>Likolobetso</span></a>
+            <a href="manyalo.html"><i class="fas fa-ring"></i><span>Manyalo</span></a>
+            <a href="financials.html"><i class="fas fa-money-bill"></i><span>Financials</span></a>
+            <a href="archives.html"><i class="fas fa-archive"></i><span>Archives</span></a>
+            <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            <div class="menu-close" id="menuClose"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="menu-toggle" id="toggleSidebar"><i class="fas fa-bars"></i></div>
+        <div id="content" class="admin-section">
+            <h1>LECSA Admin</h1>
+            <h2>Admin Dashboard</h2>
+            <p>User Count: <span id="userCount">0</span></p>
+            <h3>Manage Users</h3>
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <h3>Manage Roles</h3>
+            <div class="role-form">
+                <div>
+                    <label for="roleName">Role Name:</label>
+                    <input type="text" id="roleName" required>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="canView"> Can View</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="canAdd"> Can Add</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="canUpdate"> Can Update</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="canArchive"> Can Archive</label>
+                </div>
+                <button id="addRoleButton">Add Role</button>
+            </div>
+            <table id="roleTable">
+                <thead>
+                    <tr>
+                        <th>Role Name</th>
+                        <th>Can View</th>
+                        <th>Can Add</th>
+                        <th>Can Update</th>
+                        <th>Can Archive</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <h3>Action Logs</h3>
+            <table id="actionLogTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+<footer>
+    <p>Copyright &copy; 2026 LECSA Botha-Bothe. All rights reserved.</p>
+    <div class="social-icons">
+        <a href="https://facebook.com/botha-bothelecsa" target="_blank"><i class="fa fa-facebook"></i></a>
+        <a href="https://twitter.com/botha-bothelecsa" target="_blank"><i class="fa fa-twitter"></i></a>
+        <a href="https://instagram.com/botha-bothelecsa" target="_blank"><i class="fa fa-instagram"></i></a>
+    </div>
+</footer>
+    <script src="admin.js"></script>
+	<script src="sidebar.js"></script>
+</body>
+</html>

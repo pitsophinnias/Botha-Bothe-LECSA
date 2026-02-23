@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LECSA Archives</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+	<script src="backend-mock.js" defer></script>
+</head>
+<body>
+    <div class="header-wrapper">
+        <div class="side-menu" id="sidebar">
+            <div class="menu-logo">
+                <img src="images/logo.png" alt="LECSA Logo">
+                <span>LECSA Menu</span>
+            </div>
+            <a href="regsys.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+            <a href="kabelo.html"><i class="fas fa-home"></i><span>Kabelo Register</span></a>
+            <a href="likolobetso.html"><i class="fas fa-cross"></i><span>Likolobetso</span></a>
+            <a href="manyalo.html"><i class="fas fa-ring"></i><span>Manyalo</span></a>
+            <a href="financials.html"><i class="fas fa-money-bill"></i><span>Financials</span></a>
+            <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+            <div class="menu-close" id="menuClose"><i class="fas fa-times"></i></div>
+        </div>
+        <div class="menu-toggle" id="toggleSidebar"><i class="fas fa-bars"></i></div>
+        <div id="content" class="archives-section">
+            <h1>Archives</h1>
+            <div id="error"></div>
+            <div class="search-container">
+                <input type="text" id="search" placeholder="Search archives...">
+            </div>
+            <div class="archive-box">
+                <h2>Ba Falletseng (Moved)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lebitso</th>
+                            <th>Fane</th>
+                            <th>Palo</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="movedList"></tbody>
+                </table>
+            </div>
+            <div class="archive-box">
+                <h2>Ba Hlokahetseng (Deceased)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lebitso</th>
+                            <th>Fane</th>
+                            <th>Palo</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deceasedList"></tbody>
+                </table>
+            </div>
+            <div class="archive-box">
+                <h2>Baptisms</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Baptism Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="baptismList"></tbody>
+                </table>
+            </div>
+            <div class="archive-box">
+                <h2>Weddings</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Groom</th>
+                            <th>Bride</th>
+                            <th>Wedding Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weddingList"></tbody>
+                </table>
+            </div>
+            <div id="detailsModal" class="modal hidden">
+                <h2>Record Details</h2>
+                <table>
+                    <tbody id="detailsTable"></tbody>
+                </table>
+                <button id="closeModal">Close</button>
+            </div>
+        </div>
+    </div>
+<footer>
+    <p>Copyright &copy; 2026 LECSA Botha-Bothe. All rights reserved.</p>
+    <div class="social-icons">
+        <a href="https://facebook.com/botha-bothelecsa" target="_blank"><i class="fa fa-facebook"></i></a>
+        <a href="https://twitter.com/botha-bothelecsa" target="_blank"><i class="fa fa-twitter"></i></a>
+        <a href="https://instagram.com/botha-bothelecsa" target="_blank"><i class="fa fa-instagram"></i></a>
+    </div>
+</footer>
+    <script src="archives.js"></script>
+	<script src="sidebar.js"></script>
+</body>
+</html>
