@@ -1,4 +1,11 @@
 const express = require('express');
+let excelGenerator = null;
+try {
+    excelGenerator = require('./excelGenerator');
+    console.log('Excel generator loaded');
+} catch(e) {
+    console.warn('ExcelJS not available - install with: npm install exceljs');
+}
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
@@ -1728,17 +1735,7 @@ app.get('/api/financials/summary', authenticate, checkPermission('view'), async 
                 
                 console.log('Financial tables created successfully');
                 
-                // Insert some sample data for testing
-                const sampleDate = new Date().toISOString().split('T')[0];
-                await pool.query(`
-                    INSERT INTO financial_transactions 
-                    (transaction_date, description, category, type, amount, archived)
-                    VALUES 
-                    ($1, 'Sunday Offering', 'Offering', 'income', 1230.00, false),
-                    ($2, 'Electricity Bill', 'Utilities', 'expense', 150.00, false)
-                    ON CONFLICT DO NOTHING
-                `, [sampleDate, sampleDate]);
-                
+
             } catch (createError) {
                 console.error('Error creating tables:', createError);
             }
@@ -2296,6 +2293,163 @@ app.get('/api/admin/roles', authenticate, checkPermission('admin'), async (req, 
         res.status(500).json({ error: 'Server error' });
     }
 });
+
+
+// ============ DATA MANAGEMENT ROUTES ============
+
+// DELETE all financial data (wipe everything for a clean slate)
+app.delete('/api/financials/wipe-all', authenticate, checkPermission('admin'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        // Wipe all tables in order (weeks references transactions)
+        const tables = ['financial_weeks', 'financial_transactions'];
+        for (const table of tables) {
+            try {
+                await client.query(`DELETE FROM ${table}`);
+                await client.query(`ALTER SEQUENCE ${table}_id_seq RESTART WITH 1`);
+            } catch (e) {
+                if (e.code !== '42P01') throw e; // ignore "table doesn't exist"
+            }
+        }
+        await client.query('COMMIT');
+        await logAction(req.userId, 'wipe_all_financial_data', { wiped_by: req.username });
+        res.json({ message: 'All financial data wiped successfully' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Wipe error:', err);
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// POST: Import CSV transactions
+// Expected CSV columns (flexible, case-insensitive):
+//   date, description, category, type, amount, week_start, reference, notes
+app.post('/api/financials/import-csv', authenticate, checkPermission('add'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const { rows } = req.body; // array of row objects from parsed CSV
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return res.status(400).json({ error: 'No rows provided' });
+        }
+
+        const EXPENSE_KEYWORDS = ['expense','utilities','maintenance','staff','supplies','outreach',
+            'transport','allowance','wasco','electricity','water','rent','salary','lijo','chelete'];
+
+        let inserted = 0;
+        let skipped = 0;
+        const errors = [];
+
+        await client.query('BEGIN');
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            // Normalise keys to lowercase
+            const r = {};
+            for (const k of Object.keys(row)) r[k.trim().toLowerCase()] = (row[k] || '').toString().trim();
+
+            const date = r['date'] || r['transaction_date'] || r['transaction date'];
+            const description = r['description'] || r['desc'] || r['details'] || '';
+            const category = r['category'] || r['type'] || 'General';
+            const amountRaw = r['amount'] || r['amt'] || '0';
+            const amount = parseFloat(amountRaw.replace(/[^0-9.\-]/g, ''));
+            const week_start = r['week_start'] || r['week start'] || null;
+            const reference = r['reference'] || r['ref'] || null;
+            const notes = r['notes'] || r['note'] || null;
+            const typeHint = (r['type'] || '').toLowerCase();
+
+            if (!date || isNaN(amount) || amount === 0) {
+                skipped++;
+                errors.push({ row: i + 1, reason: 'Missing date or invalid amount', data: r });
+                continue;
+            }
+
+            // Determine income vs expense
+            let type = 'income';
+            if (typeHint === 'expense' || typeHint === 'exp') {
+                type = 'expense';
+            } else if (typeHint === 'income' || typeHint === 'inc') {
+                type = 'income';
+            } else {
+                // Infer from category
+                const cat = category.toLowerCase();
+                if (EXPENSE_KEYWORDS.some(k => cat.includes(k))) type = 'expense';
+                // Infer from negative amount
+                if (amount < 0) type = 'expense';
+            }
+
+            try {
+                await client.query(
+                    `INSERT INTO financial_transactions
+                        (transaction_date, description, category, type, amount, week_start, reference, notes, archived)
+                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+                    [date, description || 'Imported', category, type, Math.abs(amount),
+                     week_start || null, reference, notes, true] // archived=true so they appear in historical views
+                );
+                inserted++;
+            } catch (rowErr) {
+                skipped++;
+                errors.push({ row: i + 1, reason: rowErr.message, data: r });
+            }
+        }
+
+        await client.query('COMMIT');
+        await logAction(req.userId, 'csv_import', { inserted, skipped });
+        res.json({ message: `Import complete: ${inserted} rows inserted, ${skipped} skipped`, inserted, skipped, errors: errors.slice(0, 20) });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('CSV import error:', err);
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// ============ EXCEL DOWNLOAD ROUTES ============
+
+// Download Excel report for any period
+app.get('/api/financials/download', authenticate, checkPermission('view'), async (req, res) => {
+    if (!excelGenerator) {
+        return res.status(503).json({ error: 'Excel generation not available. Run: npm install exceljs' });
+    }
+    await excelGenerator.handleDownload(req, res, pool);
+});
+
+// Preview data for Excel modal (returns JSON table data)
+app.get('/api/financials/preview', authenticate, checkPermission('view'), async (req, res) => {
+    try {
+        const { period, year, month, quarter, week_start } = req.query;
+        const y = parseInt(year) || new Date().getFullYear();
+        const m = parseInt(month) || new Date().getMonth() + 1;
+        const q = parseInt(quarter) || Math.ceil(m / 3);
+
+        let query = 'SELECT * FROM financial_transactions ORDER BY transaction_date DESC, id DESC LIMIT 500';
+        let params = [];
+
+        if (year) {
+            query = `SELECT * FROM financial_transactions WHERE EXTRACT(YEAR FROM transaction_date) = $1 ORDER BY week_start, id`;
+            params = [y];
+        }
+        if (week_start) {
+            query = `SELECT * FROM financial_transactions WHERE week_start = $1 ORDER BY id`;
+            params = [week_start];
+        }
+        if (month && year) {
+            query = `SELECT * FROM financial_transactions WHERE EXTRACT(YEAR FROM transaction_date) = $1 AND EXTRACT(MONTH FROM transaction_date) = $2 ORDER BY week_start, id`;
+            params = [y, m];
+        }
+
+        const result = await pool.query(query, params);
+        res.json({ transactions: result.rows, period, year: y, month: m, quarter: q });
+    } catch (err) {
+        console.error('Preview error:', err);
+        if (err.code === '42P01') return res.json({ transactions: [], period });
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ============ ERROR HANDLING ============
 
 

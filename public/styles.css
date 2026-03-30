@@ -1477,190 +1477,829 @@ h3{
     color: var(--primary-color);
 }
 
-.financials-section h2 {
+.section-header {
     text-align: center;
-    color: var(--primary-color);
-    font-size: 2.8rem;
     margin-bottom: 40px;
-    position: relative;
-    padding-bottom: 15px;
-}
-
-.financials-section h2::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 3px;
-    background: var(--primary-color);
-}
-
-.financial-input {
-    background: white;
-    border-radius: 15px;
     padding: 30px;
-    margin-bottom: 40px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    border-top: 4px solid var(--secondary-color);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.financial-input h3 {
-    color: #333;
-    font-size: 1.5rem;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #eee;
+.section-header h2 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: var(--primary-color);
 }
 
-.financial-input form {
+.section-header p {
+    font-size: 1rem;
+    color: #666;
+}
+
+/* Quick Stats */
+.quick-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
-}
-
-.financial-input form > div {
-    margin-bottom: 0;
-}
-
-.financial-input label {
-    display: block;
-    margin-bottom: 8px;
-    color: #333;
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.financial-input input,
-.financial-input select {
-    width: 100%;
-    padding: 15px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-    background: white;
-    color: #333;
-    box-sizing: border-box;
-}
-
-.financial-input input:focus,
-.financial-input select:focus {
-    outline: none;
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-.financial-input button[type="submit"] {
-    grid-column: 1 / -1;
-    padding: 16px;
-    background: linear-gradient(135deg, var(--secondary-color), #45a049);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 10px;
-}
-
-.financial-input button[type="submit"]:hover {
-    background: linear-gradient(135deg, #45a049, var(--secondary-color));
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
-}
-
-.financial-reports {
-    background: white;
-    border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    border-top: 4px solid var(--secondary-color);
-}
-
-.financial-reports h3 {
-    color: #333;
-    font-size: 1.5rem;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #eee;
-}
-
-.report-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
     margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card i {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.stat-card.income i { color: #27ae60; }
+.stat-card.expense i { color: #e74c3c; }
+.stat-card.balance i { color: #3498db; }
+
+.stat-card h3 {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-card .value {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.stat-card.income .value { color: #27ae60; }
+.stat-card.expense .value { color: #e74c3c; }
+.stat-card.balance .value { color: #3498db; }
+
+/* Week Status */
+.week-status {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.week-status h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+#currentWeekInfo p {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
     flex-wrap: wrap;
 }
 
-.tab-button {
-    padding: 12px 25px;
+#currentWeekInfo strong {
+    min-width: 180px;
+    color: #555;
+}
+
+.status-open {
+    color: #27ae60;
+    font-weight: bold;
+    background: #d4edda;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.status-empty {
+    color: #6c757d;
+    font-weight: bold;
+    background: #e9ecef;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+/* Input Form */
+.input-form {
     background: white;
-    color: #666;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.input-form h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
+    font-size: 14px;
     transition: all 0.3s ease;
-    min-width: 120px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(193, 154, 107, 0.1);
+}
+
+.form-help {
+    font-size: 10px;
+    color: #999;
+    margin-top: 4px;
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), #a67c52);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #a67c52, var(--primary-color));
+    transform: translateY(-2px);
+}
+
+.btn-finish {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+}
+
+.btn-finish:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-preview {
+    background: #3498db;
+    color: white;
+}
+
+.btn-preview:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+.btn-download {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-download:hover {
+    background: #219a52;
+    transform: translateY(-2px);
+}
+
+.btn-confirm {
+    background: #28a745;
+    color: white;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.form-message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    display: none;
+}
+
+.form-message.success {
+    background: #d4edda;
+    color: #155724;
+    display: block;
+}
+
+.form-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    display: block;
+}
+
+/* Quick Summary */
+.quick-summary {
+    margin-bottom: 30px;
+}
+
+.quick-summary h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.summary-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.summary-card h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.summary-card p {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.summary-card.income p { color: #27ae60; }
+.summary-card.expense p { color: #e74c3c; }
+.summary-card.balance p { color: #3498db; }
+
+/* Report Tabs */
+.report-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    background: white;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab-button {
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    color: #666;
 }
 
 .tab-button:hover {
-    border-color: var(--secondary-color);
-    color: var(--secondary-color);
+    background: #f0f0f0;
 }
 
 .tab-button.active {
-    background: var(--secondary-color);
+    background: var(--primary-color);
     color: white;
-    border-color: var(--secondary-color);
 }
 
+/* Report Content */
 .report-content {
     display: none;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .report-content.active {
     display: block;
-    animation: fadeIn 0.5s ease-out;
 }
 
-.report-content h4 {
-    color: #333;
-    font-size: 1.3rem;
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
-    text-align: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-.report-content table {
+.report-header h4 {
+    margin: 0;
+    color: #333;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+/* Data Tables */
+.data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    font-size: 13px;
 }
 
-.report-content th {
-    background: linear-gradient(135deg, var(--secondary-color), #45a049);
-    color: white;
-    padding: 15px;
+.data-table th,
+.data-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
     text-align: left;
+}
+
+.data-table th {
+    background: linear-gradient(135deg, var(--primary-color), #a67c52);
+    color: white;
     font-weight: 600;
-    font-size: 0.95rem;
+    position: sticky;
+    top: 0;
 }
 
-.report-content td {
-    padding: 15px;
-    border-bottom: 1px solid #eee;
+.data-table tr:hover {
+    background: #f9f9f9;
+}
+
+.data-table tfoot td {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+/* Closed Weeks */
+.closed-weeks {
+    margin-top: 30px;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.closed-weeks h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
     color: #333;
-    font-size: 0.9rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
 }
 
-.report-content tr:hover {
-    background-color: #f9f9f9;
+.search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
 }
+
+.search-container input {
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    flex: 1;
+    max-width: 200px;
+}
+
+.refresh-button {
+    padding: 10px 20px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-button:hover {
+    background: #5a6268;
+}
+
+/* Excel Preview Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, var(--primary-color), #a67c52);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.excel-preview {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.excel-preview th,
+.excel-preview td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+}
+
+.excel-preview th {
+    background: #f0f0f0;
+    font-weight: 600;
+}
+
+/* Week Summary Modal */
+.week-summary {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.week-summary h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.week-summary p {
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 12px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-small:hover {
+    background: #2980b9;
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .financials-section {
+        width: 95%;
+        padding: 20px 10px;
+    }
+    
+    .section-header h2 {
+        font-size: 1.8rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .report-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+    
+    .tab-button {
+        white-space: nowrap;
+    }
+    
+    .data-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+}
+
+/* Additional Financials Styles */
+
+/* Expense Form Styling */
+.expense-form {
+    border-top: 4px solid #e74c3c;
+}
+
+.expense-form h3 {
+    color: #e74c3c;
+}
+
+.btn-expense {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.btn-expense:hover {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    transform: translateY(-2px);
+}
+
+.btn-large {
+    padding: 14px 28px;
+    font-size: 16px;
+}
+
+.finish-week-container {
+    text-align: center;
+    margin: 20px 0 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.finish-week-container .btn-finish {
+    font-size: 16px;
+    padding: 12px 30px;
+}
+
+.finish-week-container .form-help {
+    margin-top: 10px;
+    color: #666;
+}
+
+/* Type Badges */
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.type-badge.income {
+    background: #d4edda;
+    color: #155724;
+}
+
+.type-badge.expense {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Amount Colors */
+.income-amount {
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.expense-amount {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+/* Modal Centering Fix */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, var(--primary-color), #a67c52);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+    transition: transform 0.3s ease;
+}
+
+.close-modal:hover {
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Small Button */
+.btn-small {
+    padding: 4px 10px;
+    font-size: 11px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-small:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+        max-height: 90vh;
+    }
+    
+    .btn-large {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    .finish-week-container .btn-finish {
+        font-size: 14px;
+        padding: 10px 20px;
+    }
+}
+
 
 /* ============ KABELO PAGE STYLES ============ */
 .kabelo-section {
@@ -3827,4 +4466,91 @@ footer p {
 .committee-col p {
     font-size: 14px;
     color: var(--text-dark);
+}
+
+/* ================================================================
+   EXCEL MODAL CENTERING — FINAL AUTHORITATIVE OVERRIDE
+   These rules appear LAST so they win over all earlier .modal rules.
+
+   WHY display is NOT set here:
+     JS calls  modal.style.display = 'flex'  (inline style)
+     Inline styles beat *all* CSS rules (even !important),
+     so we must NOT declare display here at all.
+   The flex centering props (justify/align) apply the moment JS
+   sets display:flex, because position:fixed + width/height 100%
+   give the overlay a full-viewport box to centre within.
+================================================================ */
+
+#excelModal,
+#closeWeekModal {
+    /* NO display here — JS sets it as an inline style */
+    position: fixed  !important;
+    inset:    0      !important;   /* top/right/bottom/left = 0 */
+    width:    100%   !important;
+    height:   100%   !important;
+    background-color: rgba(0,0,0,0.65) !important;
+    z-index:  99999  !important;
+
+    /* Flex centering — takes effect the moment JS sets display:flex */
+    justify-content: center !important;
+    align-items:     center !important;
+
+    /* Padding so content never touches screen edge */
+    padding:    24px        !important;
+    box-sizing: border-box  !important;
+    overflow-y: auto        !important;
+
+    /* Nullify any ancestor offsets */
+    margin:    0    !important;
+    transform: none !important;
+}
+
+/* ── Excel preview content box ────────────────────────────────── */
+#excelModal .modal-content {
+    position:   relative  !important;
+    background: #ffffff   !important;
+    width:      95%       !important;
+    max-width:  1200px    !important;
+    max-height: 86vh      !important;
+    min-height: 200px     !important;
+    border-radius: 12px   !important;
+    overflow:   hidden    !important;
+    display:    flex      !important;   /* always flex for header/body/footer layout */
+    flex-direction: column !important;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5) !important;
+    /* Reset any inherited positioning */
+    margin:    auto !important;
+    top:       unset !important;
+    left:      unset !important;
+    transform: none  !important;
+    animation: lecsa_modal_in 0.28s ease !important;
+}
+
+/* ── Close-week confirmation content box ─────────────────────── */
+#closeWeekModal .modal-content {
+    position:   relative !important;
+    background: #ffffff  !important;
+    width:      95%      !important;
+    max-width:  500px    !important;
+    max-height: 90vh     !important;
+    border-radius: 12px  !important;
+    padding:    28px     !important;
+    overflow-y: auto     !important;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5) !important;
+    margin:    auto      !important;
+    top:       unset     !important;
+    left:      unset     !important;
+    transform: none      !important;
+    animation: lecsa_modal_in 0.28s ease !important;
+}
+
+@keyframes lecsa_modal_in {
+    from { opacity: 0; transform: translateY(-28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)      scale(1);   }
+}
+
+@media (max-width: 600px) {
+    #excelModal,
+    #closeWeekModal      { padding: 10px  !important; }
+    #excelModal .modal-content { max-height: 94vh !important; }
 }
