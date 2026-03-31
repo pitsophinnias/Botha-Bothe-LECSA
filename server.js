@@ -135,15 +135,26 @@ function checkPermission(requiredPermission) {
         }
     };
 }
+
 // Logs user actions
 async function logAction(userId, action, details) {
     try {
+        // Validate that userId is a valid UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        if (!userId || !uuidRegex.test(userId)) {
+            console.error('Invalid user ID format for logging:', userId);
+            return;
+        }
+        
         await pool.query(
             'INSERT INTO action_logs (user_id, action, details) VALUES ($1, $2, $3)',
             [userId, action, JSON.stringify(details)]
         );
+        console.log('Action logged:', action, 'by user:', userId);
     } catch (err) {
         console.error('Error logging action:', err);
+        // Don't throw - logging shouldn't break the main operation
     }
 }
 
@@ -1511,6 +1522,73 @@ app.post('/api/financials', authenticate, checkPermission('add'), async (req, re
     }
 });
 
+app.post('/api/financials/transaction', authenticate, checkPermission('add'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        console.log('Received transaction:', req.body);
+
+        const { type, date, week_start, church, category, amount, description, recipient } = req.body;
+
+        const transaction_date = date || new Date().toISOString().split('T')[0];
+        const finalDescription = (description || `${category}${church ? ' - ' + church : ''}`).trim();
+
+        if (!category || !amount || parseFloat(amount) <= 0) {
+            return res.status(400).json({
+                error: 'Missing or invalid required fields',
+                required: ['category', 'amount']
+            });
+        }
+
+        await client.query('BEGIN');
+
+        const result = await client.query(
+            `INSERT INTO financial_transactions (
+                transaction_date, description, category, type, amount,
+                week_start, notes, archived
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, transaction_date, description, category, type, amount`,
+            [
+                transaction_date,
+                finalDescription,
+                category.trim(),
+                type || 'income',
+                parseFloat(amount),
+                week_start || null,
+                recipient ? `Recipient: ${recipient}` : null,
+                false
+            ]
+        );
+
+        const newTransaction = result.rows[0];
+
+        await logAction(req.userId, 'add_financial_transaction', {
+            id: newTransaction.id,
+            description: newTransaction.description,
+            amount: newTransaction.amount,
+            type: newTransaction.type
+        });
+
+        await client.query('COMMIT');
+        console.log('Transaction added successfully:', newTransaction);
+
+        res.status(201).json({
+            message: 'Transaction recorded successfully',
+            transaction: newTransaction
+        });
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error adding transaction:', err);
+        if (err.code === '42P01') {
+            res.status(500).json({ error: 'Financial tables not created yet' });
+        } else {
+            res.status(500).json({ error: 'Server error: ' + err.message });
+        }
+    } finally {
+        client.release();
+    }
+});
+
 app.post('/api/financials/close-week', authenticate, checkPermission('add'), async (req, res) => {
     const client = await pool.connect();
     try {
@@ -1735,7 +1813,8 @@ app.get('/api/financials/summary', authenticate, checkPermission('view'), async 
                 
                 console.log('Financial tables created successfully');
                 
-
+                // Tables created fresh — no sample data inserted
+                
             } catch (createError) {
                 console.error('Error creating tables:', createError);
             }
@@ -2256,6 +2335,38 @@ app.get('/api/financials/categories', authenticate, checkPermission('view'), asy
 
 // ============ ADMIN ENDPOINTS ============
 
+// Temporary debug endpoint
+app.get('/api/admin/debug', authenticate, checkPermission('admin'), async (req, res) => {
+    try {
+        console.log('Debug endpoint hit');
+        
+        // Test if users table exists and has data
+        const usersTest = await pool.query('SELECT COUNT(*) FROM users');
+        console.log('Users count:', usersTest.rows[0].count);
+        
+        // Test if action_logs table exists
+        const tableCheck = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'action_logs'
+            );
+        `);
+        console.log('Action_logs table exists:', tableCheck.rows[0].exists);
+        
+        res.json({ 
+            message: 'Debug working', 
+            users_count: usersTest.rows[0].count,
+            table_exists: tableCheck.rows[0].exists 
+        });
+    } catch (err) {
+        console.error('Debug error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============ ADMIN ROUTES ============
+
+// GET all users
 app.get('/api/admin/users', authenticate, checkPermission('admin'), async (req, res) => {
     try {
         const result = await pool.query(
@@ -2268,186 +2379,344 @@ app.get('/api/admin/users', authenticate, checkPermission('admin'), async (req, 
     }
 });
 
-app.get('/api/admin/action_logs', authenticate, checkPermission('admin'), async (req, res) => {
+// PUT update a user's role
+app.put('/api/admin/users/:id/role', authenticate, checkPermission('admin'), async (req, res) => {
+    const { id } = req.params;
+    const { role } = req.body;
+    
+    if (!role) {
+        return res.status(400).json({ error: 'Role is required' });
+    }
+    
     try {
-        const result = await pool.query(
-            `SELECT al.id, u.username, al.action, al.details, al.timestamp 
-             FROM action_logs al 
-             JOIN users u ON al.user_id = u.id 
-             ORDER BY al.timestamp DESC 
-             LIMIT 100`
+        // Check if role exists
+        const roleCheck = await pool.query(
+            'SELECT role_name FROM roles WHERE role_name = $1',
+            [role]
         );
-        res.json(result.rows);
+        
+        if (roleCheck.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid role' });
+        }
+        
+        // Update the user's role - note: id is UUID, so no casting needed
+        const result = await pool.query(
+            'UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, username, role',
+            [role, id]
+        );
+        
+        if (!result.rows.length) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Log the action - user_id is UUID, action is string
+        await logAction(req.userId, 'update_user_role', { 
+            user_id: id, 
+            new_role: role,
+            old_role: result.rows[0].role 
+        });
+        
+        res.json({ message: 'Role updated successfully', user: result.rows[0] });
     } catch (err) {
-        console.error('Error fetching action logs:', err);
-        res.status(500).json({ error: 'Server error' });
+        console.error('Error updating role:', err);
+        res.status(500).json({ error: 'Server error: ' + err.message });
     }
 });
 
+// DELETE a user
+app.delete('/api/admin/users/:id', authenticate, checkPermission('admin'), async (req, res) => {
+    const { id } = req.params;
+    if (parseInt(id) === req.userId) {
+        return res.status(400).json({ error: 'You cannot delete your own account.' });
+    }
+    try {
+        const existing = await pool.query('SELECT id, username FROM users WHERE id = $1', [id]);
+        if (!existing.rows.length) return res.status(404).json({ error: 'User not found' });
+        await pool.query('DELETE FROM users WHERE id = $1', [id]);
+        await logAction(req.userId, 'delete_user', { deleted_user: existing.rows[0].username });
+        res.json({ message: 'User deleted.' });
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST reset a user's password
+app.post('/api/admin/users/:id/reset-password', authenticate, checkPermission('admin'), async (req, res) => {
+    const { id } = req.params;
+    const { new_password } = req.body;
+    if (!new_password || new_password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+    try {
+        const hashed = await bcrypt.hash(new_password, 10);
+        const result = await pool.query(
+            'UPDATE users SET password = $1 WHERE id = $2 RETURNING id, username',
+            [hashed, id]
+        );
+        if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+        await logAction(req.userId, 'reset_user_password', { user_id: id, username: result.rows[0].username });
+        res.json({ message: `Password reset for ${result.rows[0].username}.` });
+    } catch (err) {
+        console.error('Error resetting password:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET action logs
+app.get('/api/admin/action_logs', authenticate, checkPermission('admin'), async (req, res) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+        
+        console.log('Fetching action logs with limit:', limit);
+        
+        // First, check if action_logs table exists
+        const tableCheck = await pool.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'action_logs'
+            );
+        `);
+        
+        if (!tableCheck.rows[0].exists) {
+            console.log('action_logs table does not exist yet');
+            return res.json([]);
+        }
+        
+        // Try to get logs with user info
+        const query = `
+            SELECT al.id, u.username, al.action, al.details, al.timestamp 
+            FROM action_logs al 
+            LEFT JOIN users u ON al.user_id::text = u.id::text
+            ORDER BY al.timestamp DESC 
+            LIMIT $1
+        `;
+        
+        console.log('Executing query:', query);
+        const result = await pool.query(query, [limit]);
+        
+        console.log(`Found ${result.rows.length} logs`);
+        res.json(result.rows);
+        
+    } catch (err) {
+        console.error('Error fetching logs:', err);
+        console.error('Error details:', err.stack);
+        
+        // Return empty array instead of error to prevent UI breakage
+        res.json([]);
+    }
+});
+
+// GET all roles
 app.get('/api/admin/roles', authenticate, checkPermission('admin'), async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM roles ORDER BY role_name');
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching roles:', err);
-        res.status(500).json({ error: 'Server error' });
+        if (err.code === '42P01') {
+            // Table doesn't exist yet - return default roles
+            res.json([
+                { role_name: 'admin', can_view: true, can_add: true, can_update: true, can_archive: true },
+                { role_name: 'pastor', can_view: true, can_add: true, can_update: true, can_archive: true },
+                { role_name: 'secretary', can_view: true, can_add: true, can_update: true, can_archive: true },
+                { role_name: 'board_member', can_view: true, can_add: false, can_update: false, can_archive: false },
+                { role_name: 'user', can_view: true, can_add: false, can_update: false, can_archive: false }
+            ]);
+        } else {
+            res.status(500).json({ error: 'Server error' });
+        }
     }
 });
 
-
-// ============ DATA MANAGEMENT ROUTES ============
-
-// DELETE all financial data (wipe everything for a clean slate)
-app.delete('/api/financials/wipe-all', authenticate, checkPermission('admin'), async (req, res) => {
-    const client = await pool.connect();
+// POST create a new role
+app.post('/api/admin/roles', authenticate, checkPermission('admin'), async (req, res) => {
+    const { role_name, can_view, can_add, can_update, can_archive } = req.body;
+    if (!role_name || !role_name.trim()) {
+        return res.status(400).json({ error: 'Role name is required.' });
+    }
+    const PROTECTED = ['admin', 'pastor', 'secretary', 'board_member', 'user'];
+    if (PROTECTED.includes(role_name.trim().toLowerCase())) {
+        return res.status(400).json({ error: `"${role_name}" is a built-in role and cannot be re-created.` });
+    }
     try {
-        await client.query('BEGIN');
-        // Wipe all tables in order (weeks references transactions)
-        const tables = ['financial_weeks', 'financial_transactions'];
-        for (const table of tables) {
-            try {
-                await client.query(`DELETE FROM ${table}`);
-                await client.query(`ALTER SEQUENCE ${table}_id_seq RESTART WITH 1`);
-            } catch (e) {
-                if (e.code !== '42P01') throw e; // ignore "table doesn't exist"
-            }
+        const result = await pool.query(
+            `INSERT INTO roles (role_name, can_view, can_add, can_update, can_archive)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (role_name) DO NOTHING
+             RETURNING *`,
+            [role_name.trim(), !!can_view, !!can_add, !!can_update, !!can_archive]
+        );
+        if (!result.rows.length) {
+            return res.status(409).json({ error: 'A role with that name already exists.' });
         }
-        await client.query('COMMIT');
-        await logAction(req.userId, 'wipe_all_financial_data', { wiped_by: req.username });
-        res.json({ message: 'All financial data wiped successfully' });
+        await logAction(req.userId, 'create_role', { role_name });
+        res.status(201).json({ message: 'Role created.', role: result.rows[0] });
     } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Wipe error:', err);
+        console.error('Error creating role:', err);
         res.status(500).json({ error: err.message });
-    } finally {
-        client.release();
     }
 });
 
-// POST: Import CSV transactions
-// Expected CSV columns (flexible, case-insensitive):
-//   date, description, category, type, amount, week_start, reference, notes
-app.post('/api/financials/import-csv', authenticate, checkPermission('add'), async (req, res) => {
-    const client = await pool.connect();
+// PUT update an existing role's permissions
+app.put('/api/admin/roles/:role_name', authenticate, checkPermission('admin'), async (req, res) => {
+    const { role_name } = req.params;
+    const LOCKED = ['admin', 'pastor'];
+    if (LOCKED.includes(role_name)) {
+        return res.status(403).json({ error: `The "${role_name}" role permissions cannot be changed.` });
+    }
+    const { can_view, can_add, can_update, can_archive } = req.body;
     try {
-        const { rows } = req.body; // array of row objects from parsed CSV
-        if (!Array.isArray(rows) || rows.length === 0) {
-            return res.status(400).json({ error: 'No rows provided' });
-        }
-
-        const EXPENSE_KEYWORDS = ['expense','utilities','maintenance','staff','supplies','outreach',
-            'transport','allowance','wasco','electricity','water','rent','salary','lijo','chelete'];
-
-        let inserted = 0;
-        let skipped = 0;
-        const errors = [];
-
-        await client.query('BEGIN');
-
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            // Normalise keys to lowercase
-            const r = {};
-            for (const k of Object.keys(row)) r[k.trim().toLowerCase()] = (row[k] || '').toString().trim();
-
-            const date = r['date'] || r['transaction_date'] || r['transaction date'];
-            const description = r['description'] || r['desc'] || r['details'] || '';
-            const category = r['category'] || r['type'] || 'General';
-            const amountRaw = r['amount'] || r['amt'] || '0';
-            const amount = parseFloat(amountRaw.replace(/[^0-9.\-]/g, ''));
-            const week_start = r['week_start'] || r['week start'] || null;
-            const reference = r['reference'] || r['ref'] || null;
-            const notes = r['notes'] || r['note'] || null;
-            const typeHint = (r['type'] || '').toLowerCase();
-
-            if (!date || isNaN(amount) || amount === 0) {
-                skipped++;
-                errors.push({ row: i + 1, reason: 'Missing date or invalid amount', data: r });
-                continue;
-            }
-
-            // Determine income vs expense
-            let type = 'income';
-            if (typeHint === 'expense' || typeHint === 'exp') {
-                type = 'expense';
-            } else if (typeHint === 'income' || typeHint === 'inc') {
-                type = 'income';
-            } else {
-                // Infer from category
-                const cat = category.toLowerCase();
-                if (EXPENSE_KEYWORDS.some(k => cat.includes(k))) type = 'expense';
-                // Infer from negative amount
-                if (amount < 0) type = 'expense';
-            }
-
-            try {
-                await client.query(
-                    `INSERT INTO financial_transactions
-                        (transaction_date, description, category, type, amount, week_start, reference, notes, archived)
-                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-                    [date, description || 'Imported', category, type, Math.abs(amount),
-                     week_start || null, reference, notes, true] // archived=true so they appear in historical views
-                );
-                inserted++;
-            } catch (rowErr) {
-                skipped++;
-                errors.push({ row: i + 1, reason: rowErr.message, data: r });
-            }
-        }
-
-        await client.query('COMMIT');
-        await logAction(req.userId, 'csv_import', { inserted, skipped });
-        res.json({ message: `Import complete: ${inserted} rows inserted, ${skipped} skipped`, inserted, skipped, errors: errors.slice(0, 20) });
+        const result = await pool.query(
+            `UPDATE roles SET can_view=$1, can_add=$2, can_update=$3, can_archive=$4
+             WHERE role_name=$5 RETURNING *`,
+            [!!can_view, !!can_add, !!can_update, !!can_archive, role_name]
+        );
+        if (!result.rows.length) return res.status(404).json({ error: 'Role not found' });
+        await logAction(req.userId, 'update_role_permissions', { role_name });
+        res.json({ message: 'Role updated.', role: result.rows[0] });
     } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('CSV import error:', err);
+        console.error('Error updating role:', err);
         res.status(500).json({ error: err.message });
-    } finally {
-        client.release();
     }
 });
 
-// ============ EXCEL DOWNLOAD ROUTES ============
-
-// Download Excel report for any period
-app.get('/api/financials/download', authenticate, checkPermission('view'), async (req, res) => {
-    if (!excelGenerator) {
-        return res.status(503).json({ error: 'Excel generation not available. Run: npm install exceljs' });
+// DELETE a role
+app.delete('/api/admin/roles/:role_name', authenticate, checkPermission('admin'), async (req, res) => {
+    const { role_name } = req.params;
+    const PROTECTED = ['admin', 'pastor', 'secretary', 'board_member', 'user'];
+    if (PROTECTED.includes(role_name)) {
+        return res.status(403).json({ error: `"${role_name}" is a built-in role and cannot be deleted.` });
     }
-    await excelGenerator.handleDownload(req, res, pool);
+    try {
+        // Move users with this role to 'user' before deleting
+        await pool.query(`UPDATE users SET role = 'user' WHERE role = $1`, [role_name]);
+        await pool.query('DELETE FROM roles WHERE role_name = $1', [role_name]);
+        await logAction(req.userId, 'delete_role', { role_name });
+        res.json({ message: `Role "${role_name}" deleted. Affected users moved to "user" role.` });
+    } catch (err) {
+        console.error('Error deleting role:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Preview data for Excel modal (returns JSON table data)
+// ============ FINANCIALS UTILITY ROUTES ============
+
+app.get('/api/financials/transactions', authenticate, checkPermission('view'), async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT * FROM financial_transactions ORDER BY transaction_date DESC, id DESC LIMIT 500`);
+        const rows = result.rows.map(r => ({ ...r, amount: parseFloat(r.amount) || 0 }));
+        res.json(rows);
+    } catch (err) {
+        if (err.code === '42P01') return res.json([]);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/financials/preview', authenticate, checkPermission('view'), async (req, res) => {
     try {
-        const { period, year, month, quarter, week_start } = req.query;
+        const { period, year, month, week_start } = req.query;
         const y = parseInt(year) || new Date().getFullYear();
         const m = parseInt(month) || new Date().getMonth() + 1;
-        const q = parseInt(quarter) || Math.ceil(m / 3);
-
-        let query = 'SELECT * FROM financial_transactions ORDER BY transaction_date DESC, id DESC LIMIT 500';
+        const q = Math.ceil(m / 3);
+        let query = 'SELECT * FROM financial_transactions ORDER BY transaction_date DESC LIMIT 500';
         let params = [];
-
-        if (year) {
-            query = `SELECT * FROM financial_transactions WHERE EXTRACT(YEAR FROM transaction_date) = $1 ORDER BY week_start, id`;
-            params = [y];
-        }
-        if (week_start) {
-            query = `SELECT * FROM financial_transactions WHERE week_start = $1 ORDER BY id`;
-            params = [week_start];
-        }
-        if (month && year) {
-            query = `SELECT * FROM financial_transactions WHERE EXTRACT(YEAR FROM transaction_date) = $1 AND EXTRACT(MONTH FROM transaction_date) = $2 ORDER BY week_start, id`;
-            params = [y, m];
-        }
-
+        if (week_start) { query = `SELECT * FROM financial_transactions WHERE week_start = $1 ORDER BY id`; params = [week_start]; }
+        else if (month && year) { query = `SELECT * FROM financial_transactions WHERE EXTRACT(YEAR FROM transaction_date)=$1 AND EXTRACT(MONTH FROM transaction_date)=$2 ORDER BY transaction_date,id`; params = [y,m]; }
+        else if (year) { query = `SELECT * FROM financial_transactions WHERE EXTRACT(YEAR FROM transaction_date)=$1 ORDER BY transaction_date,id`; params = [y]; }
         const result = await pool.query(query, params);
-        res.json({ transactions: result.rows, period, year: y, month: m, quarter: q });
+        const rows = result.rows.map(r => ({ ...r, amount: parseFloat(r.amount) || 0 }));
+        res.json({ transactions: rows, period, year: y, month: m, quarter: q });
     } catch (err) {
-        console.error('Preview error:', err);
         if (err.code === '42P01') return res.json({ transactions: [], period });
         res.status(500).json({ error: err.message });
     }
+});
+
+app.get('/api/financials/download', authenticate, checkPermission('view'), async (req, res) => {
+    if (!excelGenerator) return res.status(503).json({ error: 'Excel generation not available. Run: npm install exceljs' });
+    await excelGenerator.handleDownload(req, res, pool);
+});
+
+app.delete('/api/admin/clear-financials', authenticate, checkPermission('admin'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM financial_transactions');
+        await client.query('DELETE FROM financial_weeks');
+        await client.query('DROP TABLE IF EXISTS imported_month_summaries');
+        await client.query('COMMIT');
+        await logAction(req.userId, 'clear_all_financials', { wiped_by: req.username });
+        res.json({ message: 'All financial data cleared.' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally { client.release(); }
+});
+
+let multer, XLSX;
+try { multer = require('multer'); } catch(e) {}
+try { XLSX = require('xlsx'); } catch(e) {}
+const upload = multer ? multer({ storage: multer.memoryStorage(), limits: { fileSize: 10*1024*1024 } }) : null;
+
+async function ensureImportTable() {
+    await pool.query(`CREATE TABLE IF NOT EXISTS imported_month_summaries (
+        id SERIAL PRIMARY KEY, report_year INTEGER NOT NULL, report_month INTEGER NOT NULL,
+        label VARCHAR(100), total_income DECIMAL(12,2) DEFAULT 0, total_expenses DECIMAL(12,2) DEFAULT 0,
+        net_balance DECIMAL(12,2) DEFAULT 0, raw_rows JSONB, imported_by VARCHAR(100),
+        imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(report_year, report_month)
+    )`);
+}
+
+app.post('/api/financials/import-report', authenticate, checkPermission('admin'), async (req, res) => {
+    if (!upload || !XLSX) return res.status(503).json({ error: 'Run: npm install multer xlsx' });
+    upload.single('file')(req, res, async (err) => {
+        if (err) return res.status(400).json({ error: err.message });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        try {
+            await ensureImportTable();
+            const { year, month } = req.body;
+            const y = parseInt(year), m = parseInt(month);
+            if (!y || !m || m < 1 || m > 12) return res.status(400).json({ error: 'Valid year and month required' });
+            const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            let totalIncome = 0, totalExpenses = 0;
+            const cleanRows = rows.filter(r => r && !r.every(c => c === '')).map(r => r.map(c => String(c||'').trim()));
+            let incomeSection = false, expenseSection = false;
+            rows.forEach(row => {
+                const rowStr = row.map(c => String(c||'').toUpperCase()).join('|');
+                if (['TSE KENENG','INCOME','RECEIPTS'].some(k => rowStr.includes(k))) { incomeSection = true; expenseSection = false; return; }
+                if (['TSE TSOILENG','EXPENSE','PAYMENTS'].some(k => rowStr.includes(k))) { expenseSection = true; incomeSection = false; return; }
+                row.forEach(cell => {
+                    const n = parseFloat(String(cell).replace(/[^0-9.]/g, ''));
+                    if (!isNaN(n) && n > 0 && !['TOTAL','KAKARETSO'].some(k => rowStr.includes(k))) {
+                        if (incomeSection) totalIncome += n;
+                        if (expenseSection) totalExpenses += n;
+                    }
+                });
+            });
+            if (totalIncome === 0 && totalExpenses === 0) rows.forEach(row => row.forEach(cell => { const n = parseFloat(String(cell).replace(/[^0-9.]/g,'')); if (!isNaN(n) && n > 0) totalIncome += n; }));
+            const net = totalIncome - totalExpenses;
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const label = `${monthNames[m-1]} ${y}`;
+            await pool.query(`INSERT INTO imported_month_summaries (report_year,report_month,label,total_income,total_expenses,net_balance,raw_rows,imported_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (report_year,report_month) DO UPDATE SET label=$3,total_income=$4,total_expenses=$5,net_balance=$6,raw_rows=$7,imported_by=$8,imported_at=NOW()`, [y,m,label,totalIncome,totalExpenses,net,JSON.stringify(cleanRows),req.username]);
+            res.json({ message: `Report for ${label} imported successfully`, label, total_income: totalIncome, total_expenses: totalExpenses, net_balance: net });
+        } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+});
+
+app.get('/api/financials/imported-reports', authenticate, checkPermission('view'), async (req, res) => {
+    try {
+        await ensureImportTable();
+        const result = await pool.query(`SELECT id,report_year,report_month,label,total_income,total_expenses,net_balance,imported_by,imported_at FROM imported_month_summaries ORDER BY report_year DESC,report_month DESC`);
+        res.json(result.rows.map(r => ({ ...r, total_income: parseFloat(r.total_income)||0, total_expenses: parseFloat(r.total_expenses)||0, net_balance: parseFloat(r.net_balance)||0 })));
+    } catch (err) { if (err.code === '42P01') return res.json([]); res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/financials/imported-reports/:id', authenticate, checkPermission('admin'), async (req, res) => {
+    try { await pool.query('DELETE FROM imported_month_summaries WHERE id=$1', [req.params.id]); res.json({ message: 'Report removed.' }); }
+    catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ============ ERROR HANDLING ============
