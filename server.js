@@ -2633,9 +2633,90 @@ app.get('/api/financials/preview', authenticate, checkPermission('view'), async 
     }
 });
 
+// ==================== ADD NEW TRANSACTION ====================
+app.post('/api/financials/transaction', 
+    authenticate, 
+    checkPermission('add'), 
+    async (req, res) => {
+    
+    const client = await pool.connect();
+    try {
+        const {
+            type,           // "income" or "expense"
+            week_start,
+            church,
+            category,
+            amount,
+            description,
+            recipient,
+            date            // optional, defaults to today
+        } = req.body;
+
+        // Basic validation
+        if (!type || !week_start || !category || !amount || amount <= 0) {
+            return res.status(400).json({ error: 'Missing required fields or invalid amount' });
+        }
+
+        await client.query('BEGIN');
+
+        const result = await client.query(
+            `INSERT INTO financial_transactions 
+             (type, week_start, church, category, amount, description, recipient, transaction_date)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             RETURNING id, type, week_start, church, category, amount, description, recipient, transaction_date`,
+            [
+                type,
+                week_start,
+                church || null,
+                category,
+                parseFloat(amount),
+                description || null,
+                recipient || null,
+                date || new Date().toISOString().split('T')[0]
+            ]
+        );
+
+        await logAction(req.userId, `add_${type}_transaction`, {
+            id: result.rows[0].id,
+            week_start,
+            category,
+            amount: parseFloat(amount)
+        });
+
+        await client.query('COMMIT');
+
+        console.log(`✅ ${type} transaction added:`, result.rows[0].id);
+
+        res.status(201).json(result.rows[0]);
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error adding financial transaction:', err);
+        res.status(500).json({ error: 'Failed to save transaction' });
+    } finally {
+        client.release();
+    }
+});
+
 app.get('/api/financials/download', authenticate, checkPermission('view'), async (req, res) => {
     if (!excelGenerator) return res.status(503).json({ error: 'Excel generation not available. Run: npm install exceljs' });
     await excelGenerator.handleDownload(req, res, pool);
+});
+
+app.delete('/api/financials/wipe-all', authenticate, checkPermission('admin'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM financial_transactions');
+        await client.query('DELETE FROM financial_weeks');
+        await client.query('DROP TABLE IF EXISTS imported_month_summaries');
+        await client.query('COMMIT');
+        await logAction(req.userId, 'clear_all_financials', { wiped_by: req.username });
+        res.json({ message: 'All financial data wiped.' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally { client.release(); }
 });
 
 app.delete('/api/admin/clear-financials', authenticate, checkPermission('admin'), async (req, res) => {
