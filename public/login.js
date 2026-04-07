@@ -64,14 +64,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Immediately redirect to registration system - token will be validated on next API call
                     console.log('Login successful, redirecting...');
-                    
+
                     // Clear any old intervals
                     if (window.recentActivitiesInterval) {
                         clearInterval(window.recentActivitiesInterval);
                     }
-                    
-                    // Redirect to registration system
-                    window.location.href = 'regsys.html';
+
+                    // Redirect based on role
+                    const userRole = (data.user?.role || '').toLowerCase();
+                    if (userRole === 'treasurer') {
+                        window.location.href = 'financials.html';
+                    } else {
+                        window.location.href = 'regsys.html';
+                    }
                     
                 } else {
                     // Login failed

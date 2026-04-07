@@ -25,12 +25,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Role-based permission helper
+const ROLE_EDIT_MAP = {
+    'admin':       ['members', 'baptisms', 'weddings', 'financials'],
+    'pastor':      ['members', 'baptisms', 'weddings', 'financials'],
+    'secretary':   ['members', 'baptisms', 'weddings'],
+    'treasurer':   ['financials'],
+    'board_member': [],
+    'user':        [],
+};
+function canEdit(resource) {
+    const role = (localStorage.getItem('role') || '').toLowerCase();
+    return (ROLE_EDIT_MAP[role] || []).includes(resource);
+}
+
 // Global variables
 let currentMembers = [];
 let currentYear = new Date().getFullYear().toString();
 
 async function initializePage() {
     try {
+        // Hide add form for users who cannot edit members
+        if (!canEdit('members')) {
+            const form = document.getElementById('memberForm');
+            if (form) form.style.display = 'none';
+        }
         await fetchMembers();
         displayMembers(currentMembers);
     } catch (error) {
@@ -134,21 +153,22 @@ function displayMembers(members) {
             <td>N/A</td>
             <td>${formattedDate}</td>
             <td class="receipt-cell">
-                <input 
-                    type="text" 
-                    class="receipt-input ${currentReceipt ? 'receipt-paid' : 'receipt-unpaid'}" 
+                <input
+                    type="text"
+                    class="receipt-input ${currentReceipt ? 'receipt-paid' : 'receipt-unpaid'}"
                     value="${currentReceipt}"
-                    placeholder="Enter receipt #"
+                    placeholder="${canEdit('members') ? 'Enter receipt #' : currentReceipt || 'N/A'}"
                     data-member-palo="${member.palo}"
                     data-year="${currentYear}"
+                    ${canEdit('members') ? '' : 'readonly'}
                 >
-                <button class="action-button save-receipt" data-member-palo="${member.palo}" data-year="${currentYear}">
-                    ${currentReceipt ? '✏️ Edit' : '💾 Save'}
-                </button>
+                ${canEdit('members') ? `<button class="action-button save-receipt" data-member-palo="${member.palo}" data-year="${currentYear}">${currentReceipt ? '✏️ Edit' : '💾 Save'}</button>` : ''}
             </td>
             <td>
+                ${canEdit('members') ? `
                 <button class="action-button edit-member" data-member-palo="${member.palo}">✏️ Edit</button>
                 <button class="action-button delete-member" data-member-palo="${member.palo}">🗑️ Archive</button>
+                ` : '<span style="color:#999;font-size:0.85em;">View only</span>'}
             </td>
         `;
         

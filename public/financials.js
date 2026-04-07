@@ -1,6 +1,20 @@
 // Helper: safely convert any value to a float (PostgreSQL returns numerics as strings)
 function safeNum(val) { const n = parseFloat(val); return isNaN(n) ? 0 : n; }
 
+// Role-based permission helper
+const ROLE_EDIT_MAP = {
+    'admin':       ['members', 'baptisms', 'weddings', 'financials'],
+    'pastor':      ['members', 'baptisms', 'weddings', 'financials'],
+    'secretary':   ['members', 'baptisms', 'weddings'],
+    'treasurer':   ['financials'],
+    'board_member': [],
+    'user':        [],
+};
+function canEdit(resource) {
+    const role = (localStorage.getItem('role') || '').toLowerCase();
+    return (ROLE_EDIT_MAP[role] || []).includes(resource);
+}
+
 // financials.js - Updated with modal centering, custom entries, separate expenses
 
 let currentUser = null;
@@ -25,15 +39,24 @@ document.addEventListener('DOMContentLoaded', function() {
 function checkFinancialsLogin() {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
-    
+
     if (!token || !user) {
         window.location.href = 'login.html';
         return;
     }
-    
+
     try {
         currentUser = JSON.parse(user);
         console.log('Logged in as:', currentUser.username);
+
+        // Hide edit controls for users who cannot edit financials
+        if (!canEdit('financials')) {
+            const hideIds = ['weeklyIncomeForm', 'weeklyExpenseForm', 'adminToolbar', 'finishWeekBtn'];
+            hideIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
     } catch (e) {
         console.error('Failed to parse user:', e);
         window.location.href = 'login.html';

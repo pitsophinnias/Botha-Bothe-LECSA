@@ -410,7 +410,7 @@ app.get('/api/members', authenticate, checkPermission('view', 'members'), async 
     }
 });
 
-app.post('/api/members', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/members', authenticate, checkPermission('add', 'members'), async (req, res) => {
     const client = await pool.connect();
     try {
         const { lebitso, fane } = req.body;
@@ -471,7 +471,7 @@ app.post('/api/members', authenticate, checkPermission('add'), async (req, res) 
     }
 });
 // Add this endpoint to your existing server.js file
-app.put('/api/members/:palo/receipt', authenticate, checkPermission('update'), async (req, res) => {
+app.put('/api/members/:palo/receipt', authenticate, checkPermission('update', 'members'), async (req, res) => {
     try {
         const { palo } = req.params;
         const { year, receipt } = req.body;
@@ -528,7 +528,7 @@ app.put('/api/members/:palo/receipt', authenticate, checkPermission('update'), a
     }
 });
 
-app.put('/api/members/:palo/archive', authenticate, checkPermission('archive'), async (req, res) => {
+app.put('/api/members/:palo/archive', authenticate, checkPermission('archive', 'members'), async (req, res) => {
     const client = await pool.connect();
     try {
         const { palo } = req.params;
@@ -615,7 +615,7 @@ app.put('/api/members/:palo/archive', authenticate, checkPermission('archive'), 
 });
 
 // Update member endpoint
-app.put('/api/members/:palo', authenticate, checkPermission('update'), async (req, res) => {
+app.put('/api/members/:palo', authenticate, checkPermission('update', 'members'), async (req, res) => {
     try {
         const { palo } = req.params;
         const { lebitso, fane } = req.body;
@@ -801,7 +801,7 @@ app.get('/api/baptisms', authenticate, checkPermission('view'), async (req, res)
     }
 });
 
-app.post('/api/baptisms', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/baptisms', authenticate, checkPermission('add', 'baptisms'), async (req, res) => {
     const client = await pool.connect();
     try {
         // Log the incoming request body
@@ -902,7 +902,7 @@ app.post('/api/baptisms', authenticate, checkPermission('add'), async (req, res)
 });
 
 // UPDATE existing baptism record
-app.put('/api/baptisms/:id', authenticate, checkPermission('update'), async (req, res) => {
+app.put('/api/baptisms/:id', authenticate, checkPermission('update', 'baptisms'), async (req, res) => {
     try {
         const { id } = req.params;
         const {
@@ -1053,7 +1053,7 @@ app.get('/api/weddings', authenticate, checkPermission('view'), async (req, res)
     }
 });
 
-app.post('/api/weddings', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/weddings', authenticate, checkPermission('add', 'weddings'), async (req, res) => {
     const client = await pool.connect();
     try {
         console.log('=== START WEDDING POST REQUEST ===');
@@ -1152,7 +1152,7 @@ app.post('/api/weddings', authenticate, checkPermission('add'), async (req, res)
 });
 
 // Update existing wedding (PUT /api/weddings/:id)
-app.put('/api/weddings/:id', authenticate, checkPermission('update'), async (req, res) => {
+app.put('/api/weddings/:id', authenticate, checkPermission('update', 'weddings'), async (req, res) => {
     try {
         const { id } = req.params;
         const {
@@ -1465,11 +1465,11 @@ app.get('/api/financials', authenticate, checkPermission('view'), async (req, re
 });
 
 
-app.post('/api/financials', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/financials', authenticate, checkPermission('add', 'financials'), async (req, res) => {
     const client = await pool.connect();
     try {
         console.log('Received financial transaction:', req.body);
-        
+
         const {
             date: transaction_date,
             description,
@@ -1555,7 +1555,7 @@ app.post('/api/financials', authenticate, checkPermission('add'), async (req, re
     }
 });
 
-app.post('/api/financials/transaction', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/financials/transaction', authenticate, checkPermission('add', 'financials'), async (req, res) => {
     const client = await pool.connect();
     try {
         console.log('Received transaction:', req.body);
@@ -1625,11 +1625,11 @@ app.post('/api/financials/transaction', authenticate, checkPermission('add'), as
     }
 });
 
-app.post('/api/financials/close-week', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/financials/close-week', authenticate, checkPermission('add', 'financials'), async (req, res) => {
     const client = await pool.connect();
     try {
         const { week_start } = req.body;
-        
+
         console.log('Closing week starting:', week_start);
         
         if (!week_start) {
@@ -1969,7 +1969,7 @@ app.get('/api/financials', authenticate, checkPermission('view'), async (req, re
 });
 
 // POST new financial transaction
-app.post('/api/financials', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/financials', authenticate, checkPermission('add', 'financials'), async (req, res) => {
     try {
         console.log('Received financial transaction:', req.body);
         
@@ -2068,7 +2068,7 @@ app.get('/api/financials/summary', authenticate, checkPermission('view'), async 
 });
 
 // POST close financial week
-app.post('/api/financials/close-week', authenticate, checkPermission('add'), async (req, res) => {
+app.post('/api/financials/close-week', authenticate, checkPermission('add', 'financials'), async (req, res) => {
     try {
         const { week_start } = req.body;
         

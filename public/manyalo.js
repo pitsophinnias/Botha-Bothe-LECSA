@@ -1,3 +1,17 @@
+// Role-based permission helper
+const ROLE_EDIT_MAP = {
+    'admin':       ['members', 'baptisms', 'weddings', 'financials'],
+    'pastor':      ['members', 'baptisms', 'weddings', 'financials'],
+    'secretary':   ['members', 'baptisms', 'weddings'],
+    'treasurer':   ['financials'],
+    'board_member': [],
+    'user':        [],
+};
+function canEdit(resource) {
+    const role = (localStorage.getItem('role') || '').toLowerCase();
+    return (ROLE_EDIT_MAP[role] || []).includes(resource);
+}
+
 // Global variables
 let currentUser = null;
 let currentWeddings = [];
@@ -61,14 +75,11 @@ function initializeWeddingsPage() {
     }
     
     // Set up form submission
-    if (weddingForm && currentUser.role !== 'board_member') {
+    if (weddingForm && canEdit('weddings')) {
         weddingForm.addEventListener('submit', handleWeddingSubmit);
     } else if (weddingForm) {
-        // Disable form for board members
-        weddingForm.querySelectorAll('input, button').forEach(element => {
-            element.disabled = true;
-        });
-        weddingForm.querySelector('button').textContent = 'Record Wedding (Read Only)';
+        // Hide form for users who cannot edit weddings
+        weddingForm.style.display = 'none';
     }
     
     // Set up search
@@ -396,7 +407,7 @@ async function viewDetails(id) {
             </button>
         `;
         
-        if (currentUser.role !== 'board_member') {
+        if (canEdit('weddings')) {
             buttonsHtml = `
                 <button id="editBtn" style="padding: 8px 16px; background: #ffc107; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
                     Edit
