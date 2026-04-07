@@ -876,7 +876,7 @@ function openCloseWeekModal() {
         showFormMessage('Please select a week start date first', 'error', 'income');
         return;
     }
-    
+
     // Calculate week totals
     const weekTransactions = financialData.transactions.filter(t => t.week_start === weekStart);
     let totalIncome = 0;

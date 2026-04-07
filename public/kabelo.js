@@ -61,7 +61,7 @@ async function fetchMembers() {
         console.log('Response status:', response.status);
         
         if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401) {
                 localStorage.removeItem('token');
                 window.location.href = 'login.html';
                 return;

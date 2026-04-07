@@ -6,88 +6,252 @@
     <title>LECSA Church - Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-	<link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+    <link rel="icon" type="image/x-icon" href="images/banner1.jpg">
+    <style>
+        /* ── Admin page scoped styles ─────────────────────────────── */
+        .admin-section { padding: 1.5rem 2rem; }
+        .admin-section h1 { font-size: 1.6rem; color: #2c3e50; margin-bottom: 0.2rem; }
+        .admin-section h2 { font-size: 1.1rem; color: #7f8c8d; font-weight: 400; margin-bottom: 1.8rem; }
+
+        .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: #fff; border-radius: 10px; padding: 1.2rem 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.08); text-align: center; }
+        .stat-card .stat-icon { font-size: 2rem; margin-bottom: .4rem; }
+        .stat-card .stat-number { font-size: 2rem; font-weight: 700; color: #2c3e50; }
+        .stat-card .stat-label { font-size: 0.78rem; color: #95a5a6; text-transform: uppercase; letter-spacing: .04em; }
+
+        .admin-card { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 2rem; overflow: hidden; }
+        .admin-card-header { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1.4rem; background: #f8f9fa; border-bottom: 1px solid #e9ecef; }
+        .admin-card-header h3 { font-size: 1rem; margin: 0; color: #2c3e50; }
+        .admin-card-body { padding: 1.2rem 1.4rem; }
+
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .data-table th { background: #2c3e50; color: #fff; padding: 9px 12px; text-align: left; font-weight: 600; }
+        .data-table td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: #f8f9fa; }
+
+        .role-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; text-transform: capitalize; }
+        .role-badge.admin, .role-badge.pastor { background: #fdeaea; color: #c0392b; }
+        .role-badge.secretary { background: #eaf4fd; color: #2980b9; }
+        .role-badge.board_member { background: #eafaf1; color: #27ae60; }
+        .role-badge.user { background: #f5f5f5; color: #7f8c8d; }
+        .role-badge.custom { background: #fef9e7; color: #d68910; }
+
+        .perm-chip { display: inline-block; font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; margin: 1px; }
+        .perm-yes { background: #d5f5e3; color: #1e8449; }
+        .perm-no  { background: #f5f5f5; color: #bdc3c7; text-decoration: line-through; }
+
+        .btn-xs { font-size: 0.76rem; padding: 4px 10px; border-radius: 5px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-primary { background: #2980b9; color: #fff; }
+        .btn-warning { background: #e67e22; color: #fff; }
+        .btn-danger  { background: #e74c3c; color: #fff; }
+        .btn-success { background: #27ae60; color: #fff; }
+        .btn-xs:hover { opacity: .85; }
+
+        .form-row { display: flex; flex-wrap: wrap; gap: .8rem; align-items: flex-end; margin-bottom: .8rem; }
+        .form-row .fg { display: flex; flex-direction: column; gap: 4px; }
+        .form-row label { font-size: 0.82rem; font-weight: 600; color: #555; }
+        .form-row input[type=text], .form-row input[type=password], .form-row select {
+            padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.88rem; min-width: 160px;
+        }
+        .perm-checkboxes { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .perm-checkboxes label { font-size: 0.82rem; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+        .log-action { font-size: 0.8rem; background: #eaf4fd; color: #2471a3; padding: 2px 8px; border-radius: 4px; }
+        .log-details { font-size: 0.78rem; color: #7f8c8d; max-width: 260px; word-break: break-all; }
+        .log-time { font-size: 0.78rem; color: #95a5a6; white-space: nowrap; }
+
+        /* Modal */
+        .a-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1000; align-items: center; justify-content: center; }
+        .a-modal-overlay.open { display: flex; }
+        .a-modal { background: #fff; border-radius: 12px; padding: 1.8rem; width: 100%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,.18); }
+        .a-modal h4 { margin: 0 0 1rem; font-size: 1.05rem; color: #2c3e50; }
+        .a-modal .fg { display: flex; flex-direction: column; gap: 4px; margin-bottom: .9rem; }
+        .a-modal label { font-size: 0.82rem; font-weight: 600; color: #555; }
+        .a-modal input, .a-modal select { padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: .9rem; width: 100%; box-sizing: border-box; }
+        .a-modal-actions { display: flex; gap: .7rem; margin-top: 1.2rem; }
+        .a-modal-actions button { flex: 1; }
+        .tabs-bar { display: flex; border-bottom: 2px solid #e9ecef; margin-bottom: 1.5rem; gap: .2rem; }
+        .tabs-bar button { background: none; border: none; padding: .6rem 1.2rem; font-size: .9rem; cursor: pointer; color: #7f8c8d; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+        .tabs-bar button.active { color: #2980b9; border-bottom-color: #2980b9; font-weight: 600; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        .empty-state { text-align: center; padding: 2.5rem; color: #bdc3c7; font-size: .9rem; }
+        .search-bar { display: flex; gap: .6rem; margin-bottom: 1rem; }
+        .search-bar input { flex: 1; padding: 7px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: .88rem; }
+        select.role-inline { padding: 4px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: .83rem; }
+    </style>
 </head>
 <body>
-    <div class="header-wrapper">
-        <div class="side-menu" id="sidebar">
-            <div class="menu-logo">
-                <img src="images/logo.jpg" alt="LECSA Logo">
-                <span>LECSA Menu</span>
-            </div>
-            <a href="regsys.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
-            <a href="kabelo.html"><i class="fas fa-home"></i><span>Kabelo Register</span></a>
-            <a href="likolobetso.html"><i class="fas fa-cross"></i><span>Likolobetso</span></a>
-            <a href="manyalo.html"><i class="fas fa-ring"></i><span>Manyalo</span></a>
-            <a href="financials.html"><i class="fas fa-money-bill"></i><span>Financials</span></a>
-            <a href="archives.html"><i class="fas fa-archive"></i><span>Archives</span></a>
-            <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
-            <div class="menu-close" id="menuClose"><i class="fas fa-times"></i></div>
+<div class="header-wrapper">
+    <div class="side-menu" id="sidebar">
+        <div class="menu-logo">
+            <img src="images/logo.jpg" alt="LECSA Logo">
+            <span>LECSA Menu</span>
         </div>
-        <div class="menu-toggle" id="toggleSidebar"><i class="fas fa-bars"></i></div>
-        <div id="content" class="admin-section">
-            <h1>LECSA Admin</h1>
-            <h2>Admin Dashboard</h2>
-            <p>User Count: <span id="userCount">0</span></p>
-            <h3>Manage Users</h3>
-            <table id="userTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Role</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <h3>Manage Roles</h3>
-            <div class="role-form">
-                <div>
-                    <label for="roleName">Role Name:</label>
-                    <input type="text" id="roleName" required>
-                </div>
-                <div>
-                    <label><input type="checkbox" id="canView"> Can View</label>
-                </div>
-                <div>
-                    <label><input type="checkbox" id="canAdd"> Can Add</label>
-                </div>
-                <div>
-                    <label><input type="checkbox" id="canUpdate"> Can Update</label>
-                </div>
-                <div>
-                    <label><input type="checkbox" id="canArchive"> Can Archive</label>
-                </div>
-                <button id="addRoleButton">Add Role</button>
-            </div>
-            <table id="roleTable">
-                <thead>
-                    <tr>
-                        <th>Role Name</th>
-                        <th>Can View</th>
-                        <th>Can Add</th>
-                        <th>Can Update</th>
-                        <th>Can Archive</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <h3>Action Logs</h3>
-            <table id="actionLogTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Action</th>
-                        <th>Details</th>
-                        <th>Timestamp</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <a href="regsys.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+        <a href="kabelo.html"><i class="fas fa-home"></i><span>Kabelo Register</span></a>
+        <a href="likolobetso.html"><i class="fas fa-cross"></i><span>Likolobetso</span></a>
+        <a href="manyalo.html"><i class="fas fa-ring"></i><span>Manyalo</span></a>
+        <a href="financials.html"><i class="fas fa-money-bill"></i><span>Financials</span></a>
+        <a href="archives.html"><i class="fas fa-archive"></i><span>Archives</span></a>
+        <a href="#" id="logoutLink"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        <div class="menu-close" id="menuClose"><i class="fas fa-times"></i></div>
     </div>
+    <div class="menu-toggle" id="toggleSidebar"><i class="fas fa-bars"></i></div>
+
+    <div id="content" class="admin-section">
+        <h1><i class="fas fa-shield-alt" style="color:#2980b9;margin-right:.4rem;"></i>LECSA Admin</h1>
+        <h2>System Administration Dashboard</h2>
+
+        <!-- Stats row -->
+        <div class="admin-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-number" id="statUsers">—</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏷️</div>
+                <div class="stat-number" id="statRoles">—</div>
+                <div class="stat-label">Roles</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-number" id="statLogs">—</div>
+                <div class="stat-label">Recent Actions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔑</div>
+                <div class="stat-number" id="statAdmins">—</div>
+                <div class="stat-label">Admins/Pastors</div>
+            </div>
+        </div>
+
+        <!-- Tab navigation -->
+        <div class="tabs-bar">
+            <button class="active" data-tab="usersTab">
+                <i class="fas fa-users"></i> Users
+            </button>
+            <button data-tab="rolesTab">
+                <i class="fas fa-id-badge"></i> Roles &amp; Permissions
+            </button>
+            <button data-tab="logsTab">
+                <i class="fas fa-history"></i> Action Logs
+            </button>
+        </div>
+
+        <!-- USERS TAB -->
+        <div class="tab-pane active" id="usersTab">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3><i class="fas fa-users" style="color:#2980b9;margin-right:.4rem;"></i>User Accounts</h3>
+                    <button class="btn-xs btn-success" onclick="openAddUserModal()">
+                        <i class="fas fa-plus"></i> Add User
+                    </button>
+                </div>
+                <div class="admin-card-body">
+                    <div class="search-bar">
+                        <input type="text" id="userSearch" placeholder="Search by username or role…" oninput="filterUsers()">
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="userTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr><td colspan="5" class="empty-state">Loading…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROLES TAB -->
+        <div class="tab-pane" id="rolesTab">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3><i class="fas fa-id-badge" style="color:#8e44ad;margin-right:.4rem;"></i>Roles &amp; Permissions</h3>
+                    <button class="btn-xs btn-success" onclick="openAddRoleModal()">
+                        <i class="fas fa-plus"></i> Add Role
+                    </button>
+                </div>
+                <div class="admin-card-body">
+                    <p style="font-size:.82rem;color:#7f8c8d;margin:0 0 1rem;">
+                        <i class="fas fa-lock"></i> <strong>admin</strong> and <strong>pastor</strong> permissions are locked and cannot be changed.
+                    </p>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="roleTable">
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th>View</th>
+                                    <th>Add</th>
+                                    <th>Update</th>
+                                    <th>Archive</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roleTableBody">
+                                <tr><td colspan="6" class="empty-state">Loading…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOGS TAB -->
+        <div class="tab-pane" id="logsTab">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3><i class="fas fa-history" style="color:#e67e22;margin-right:.4rem;"></i>Action Logs</h3>
+                    <div style="display:flex;gap:.5rem;align-items:center;">
+                        <select id="logLimit" onchange="fetchActionLogs()" style="padding:4px 8px;border:1px solid #ddd;border-radius:5px;font-size:.82rem;">
+                            <option value="50">Last 50</option>
+                            <option value="100" selected>Last 100</option>
+                            <option value="250">Last 250</option>
+                            <option value="500">Last 500</option>
+                        </select>
+                        <button class="btn-xs btn-primary" onclick="fetchActionLogs()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="admin-card-body">
+                    <div class="search-bar">
+                        <input type="text" id="logSearch" placeholder="Filter by user or action…" oninput="filterLogs()">
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="actionLogTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logTableBody">
+                                <tr><td colspan="5" class="empty-state">Loading…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div><!-- /#content -->
+</div><!-- /.header-wrapper -->
+
 <footer>
     <p>Copyright &copy; 2026 LECSA Botha-Bothe. All rights reserved.</p>
     <div class="social-icons">
@@ -96,7 +260,110 @@
         <a href="https://instagram.com/botha-bothelecsa" target="_blank"><i class="fa fa-instagram"></i></a>
     </div>
 </footer>
-    <script src="admin.js"></script>
-	<script src="sidebar.js"></script>
+
+<!-- ── ADD USER MODAL ──────────────────────────────────────── -->
+<div class="a-modal-overlay" id="addUserModal">
+    <div class="a-modal">
+        <h4><i class="fas fa-user-plus" style="color:#27ae60;"></i> Add New User</h4>
+        <div class="fg">
+            <label>Username</label>
+            <input type="text" id="newUsername" placeholder="e.g. Rev_Mokoena" autocomplete="off">
+        </div>
+        <div class="fg">
+            <label>Password (min 6 chars)</label>
+            <input type="password" id="newPassword" placeholder="Temporary password" autocomplete="new-password">
+        </div>
+        <div class="fg">
+            <label>Role</label>
+            <select id="newUserRole"></select>
+        </div>
+        <div class="a-modal-actions">
+            <button class="btn-xs btn-success" style="padding:8px;" onclick="submitAddUser()">
+                <i class="fas fa-check"></i> Create User
+            </button>
+            <button class="btn-xs" style="padding:8px;background:#95a5a6;color:#fff;" onclick="closeModal('addUserModal')">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── RESET PASSWORD MODAL ───────────────────────────────── -->
+<div class="a-modal-overlay" id="resetPwModal">
+    <div class="a-modal">
+        <h4><i class="fas fa-key" style="color:#e67e22;"></i> Reset Password</h4>
+        <p id="resetPwLabel" style="font-size:.88rem;color:#555;margin:.2rem 0 1rem;"></p>
+        <input type="hidden" id="resetPwUserId">
+        <div class="fg">
+            <label>New Password (min 6 chars)</label>
+            <input type="password" id="resetPwValue" placeholder="New password" autocomplete="new-password">
+        </div>
+        <div class="a-modal-actions">
+            <button class="btn-xs btn-warning" style="padding:8px;" onclick="submitResetPassword()">
+                <i class="fas fa-key"></i> Reset Password
+            </button>
+            <button class="btn-xs" style="padding:8px;background:#95a5a6;color:#fff;" onclick="closeModal('resetPwModal')">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── ADD ROLE MODAL ─────────────────────────────────────── -->
+<div class="a-modal-overlay" id="addRoleModal">
+    <div class="a-modal">
+        <h4><i class="fas fa-plus-circle" style="color:#8e44ad;"></i> Create New Role</h4>
+        <div class="fg">
+            <label>Role Name</label>
+            <input type="text" id="addRoleName" placeholder="e.g. treasurer" autocomplete="off">
+        </div>
+        <div class="fg">
+            <label>Permissions</label>
+            <div class="perm-checkboxes" style="margin-top:4px;">
+                <label><input type="checkbox" id="addCanView"> View</label>
+                <label><input type="checkbox" id="addCanAdd"> Add</label>
+                <label><input type="checkbox" id="addCanUpdate"> Update</label>
+                <label><input type="checkbox" id="addCanArchive"> Archive</label>
+            </div>
+        </div>
+        <div class="a-modal-actions">
+            <button class="btn-xs btn-success" style="padding:8px;" onclick="submitAddRole()">
+                <i class="fas fa-check"></i> Create Role
+            </button>
+            <button class="btn-xs" style="padding:8px;background:#95a5a6;color:#fff;" onclick="closeModal('addRoleModal')">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── EDIT ROLE PERMISSIONS MODAL ───────────────────────── -->
+<div class="a-modal-overlay" id="editRoleModal">
+    <div class="a-modal">
+        <h4><i class="fas fa-edit" style="color:#2980b9;"></i> Edit Role Permissions</h4>
+        <p id="editRoleLabel" style="font-size:.88rem;color:#555;margin:.2rem 0 1rem;"></p>
+        <input type="hidden" id="editRoleName">
+        <div class="fg">
+            <label>Permissions</label>
+            <div class="perm-checkboxes" style="margin-top:4px;">
+                <label><input type="checkbox" id="editCanView"> View</label>
+                <label><input type="checkbox" id="editCanAdd"> Add</label>
+                <label><input type="checkbox" id="editCanUpdate"> Update</label>
+                <label><input type="checkbox" id="editCanArchive"> Archive</label>
+            </div>
+        </div>
+        <div class="a-modal-actions">
+            <button class="btn-xs btn-primary" style="padding:8px;" onclick="submitEditRole()">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <button class="btn-xs" style="padding:8px;background:#95a5a6;color:#fff;" onclick="closeModal('editRoleModal')">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="admin.js"></script>
+<script src="sidebar.js"></script>
 </body>
 </html>

@@ -8,7 +8,9 @@ try {
 }
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+// Return DATE columns as plain "YYYY-MM-DD" strings (prevent timezone offset shifting the date)
+types.setTypeParser(1082, val => val);
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
@@ -110,28 +112,59 @@ function authenticate(req, res, next) {
     }
 }
 
-// Checks user permissions based on role
-function checkPermission(requiredPermission) {
-    return function (req, res, next) {
-        // Permission mapping based on role
-        const rolePermissions = {
-			'admin': ['view', 'add', 'update', 'archive', 'admin'],
-            'pastor': ['view', 'add', 'update', 'archive', 'admin'],
-            'secretary': ['view', 'add', 'update', 'archive'],
-            'board_member': ['view'],
-            'user': ['view']  // 'user' role only has 'view' permission
-        };
+// Resource-specific permission matrix for built-in roles.
+// '*' is the wildcard — applies when no resource-specific rule exists.
+const ROLE_PAGE_PERMISSIONS = {
+    'admin':   { '*': ['view', 'add', 'update', 'archive', 'admin'] },
+    'pastor':  { '*': ['view', 'add', 'update', 'archive', 'admin'] },
+    'secretary': {
+        '*':          ['view'],
+        'members':    ['view', 'add', 'update', 'archive'],
+        'baptisms':   ['view', 'add', 'update', 'archive'],
+        'weddings':   ['view', 'add', 'update', 'archive'],
+    },
+    'treasurer': {
+        '*':          ['view'],
+        'financials': ['view', 'add', 'update', 'archive'],
+    },
+    'board_member': { '*': ['view'] },
+    'user':         { '*': ['view'] },
+};
 
+// checkPermission(action, resource?)
+// resource is optional — pass it to enforce page-level restrictions.
+// Built-in roles use ROLE_PAGE_PERMISSIONS; custom roles fall back to the roles table.
+function checkPermission(requiredPermission, resource = null) {
+    return async function (req, res, next) {
         const userRole = req.role || 'user';
-        const permissions = rolePermissions[userRole] || [];
-        
-        console.log(`DEBUG: User role: ${userRole}, Required: ${requiredPermission}, Permissions: ${permissions}`);
-        
-        if (permissions.includes(requiredPermission)) {
-            next();
-        } else {
-            console.log(`Permission denied: ${userRole} cannot ${requiredPermission}`);
+
+        if (ROLE_PAGE_PERMISSIONS[userRole]) {
+            const rolePerm = ROLE_PAGE_PERMISSIONS[userRole];
+            // Resource-specific perms take priority over wildcard
+            const perms = (resource && rolePerm[resource]) ? rolePerm[resource] : (rolePerm['*'] || []);
+            if (perms.includes(requiredPermission)) return next();
+            console.log(`Permission denied: ${userRole} cannot ${requiredPermission} on ${resource || 'global'}`);
             return res.status(403).json({ error: 'Insufficient permissions' });
+        }
+
+        // Custom role: look up in the roles table (global permissions only)
+        try {
+            const result = await pool.query(
+                'SELECT can_view, can_add, can_update, can_archive FROM roles WHERE role_name = $1',
+                [userRole]
+            );
+            if (!result.rows.length) {
+                console.log(`Unknown role: ${userRole}`);
+                return res.status(403).json({ error: 'Unknown role' });
+            }
+            const r = result.rows[0];
+            const permMap = { view: r.can_view, add: r.can_add, update: r.can_update, archive: r.can_archive };
+            if (permMap[requiredPermission]) return next();
+            console.log(`Permission denied (custom role): ${userRole} cannot ${requiredPermission}`);
+            return res.status(403).json({ error: 'Insufficient permissions' });
+        } catch (err) {
+            console.error('checkPermission DB error:', err.message);
+            return res.status(500).json({ error: 'Server error checking permissions' });
         }
     };
 }
@@ -347,7 +380,7 @@ app.post('/api/register/public', async (req, res) => {
 
 // ============ MEMBERS ENDPOINTS ============
 
-app.get('/api/members', authenticate, checkPermission('view'), async (req, res) => {
+app.get('/api/members', authenticate, checkPermission('view', 'members'), async (req, res) => {
     try {
         const { search = '' } = req.query;
         
@@ -1530,7 +1563,7 @@ app.post('/api/financials/transaction', authenticate, checkPermission('add'), as
         const { type, date, week_start, church, category, amount, description, recipient } = req.body;
 
         const transaction_date = date || new Date().toISOString().split('T')[0];
-        const finalDescription = (description || `${category}${church ? ' - ' + church : ''}`).trim();
+        const finalDescription = (description || category).trim();
 
         if (!category || !amount || parseFloat(amount) <= 0) {
             return res.status(400).json({
@@ -1544,9 +1577,10 @@ app.post('/api/financials/transaction', authenticate, checkPermission('add'), as
         const result = await client.query(
             `INSERT INTO financial_transactions (
                 transaction_date, description, category, type, amount,
-                week_start, notes, archived
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, transaction_date, description, category, type, amount`,
+                week_start, church, recipient, notes, archived
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING id, transaction_date, description, category, type, amount,
+                      week_start, church, recipient`,
             [
                 transaction_date,
                 finalDescription,
@@ -1554,7 +1588,9 @@ app.post('/api/financials/transaction', authenticate, checkPermission('add'), as
                 type || 'income',
                 parseFloat(amount),
                 week_start || null,
-                recipient ? `Recipient: ${recipient}` : null,
+                church || null,
+                recipient || null,
+                null,
                 false
             ]
         );
@@ -2630,71 +2666,6 @@ app.get('/api/financials/preview', authenticate, checkPermission('view'), async 
     } catch (err) {
         if (err.code === '42P01') return res.json({ transactions: [], period });
         res.status(500).json({ error: err.message });
-    }
-});
-
-// ==================== ADD NEW TRANSACTION ====================
-app.post('/api/financials/transaction', 
-    authenticate, 
-    checkPermission('add'), 
-    async (req, res) => {
-    
-    const client = await pool.connect();
-    try {
-        const {
-            type,           // "income" or "expense"
-            week_start,
-            church,
-            category,
-            amount,
-            description,
-            recipient,
-            date            // optional, defaults to today
-        } = req.body;
-
-        // Basic validation
-        if (!type || !week_start || !category || !amount || amount <= 0) {
-            return res.status(400).json({ error: 'Missing required fields or invalid amount' });
-        }
-
-        await client.query('BEGIN');
-
-        const result = await client.query(
-            `INSERT INTO financial_transactions 
-             (type, week_start, church, category, amount, description, recipient, transaction_date)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING id, type, week_start, church, category, amount, description, recipient, transaction_date`,
-            [
-                type,
-                week_start,
-                church || null,
-                category,
-                parseFloat(amount),
-                description || null,
-                recipient || null,
-                date || new Date().toISOString().split('T')[0]
-            ]
-        );
-
-        await logAction(req.userId, `add_${type}_transaction`, {
-            id: result.rows[0].id,
-            week_start,
-            category,
-            amount: parseFloat(amount)
-        });
-
-        await client.query('COMMIT');
-
-        console.log(`✅ ${type} transaction added:`, result.rows[0].id);
-
-        res.status(201).json(result.rows[0]);
-
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error adding financial transaction:', err);
-        res.status(500).json({ error: 'Failed to save transaction' });
-    } finally {
-        client.release();
     }
 });
 

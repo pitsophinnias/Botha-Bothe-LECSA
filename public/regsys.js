@@ -68,9 +68,9 @@ async function fetchRecentActivities() {
                         <small>Add first member in Kabelo</small>
                     `;
                 }
-            } else if (memberResponse.status === 401 || memberResponse.status === 403) {
+            } else if (memberResponse.status === 401) {
                 // Token is invalid or expired
-                console.log('Token invalid (401/403) in member fetch');
+                console.log('Token invalid (401) in member fetch');
                 handleTokenExpired();
                 return;
             } else if (memberResponse.status === 404) {
@@ -132,9 +132,9 @@ async function fetchRecentActivities() {
                         <small>Record first baptism</small>
                     `;
                 }
-            } else if (baptismResponse.status === 401 || baptismResponse.status === 403) {
+            } else if (baptismResponse.status === 401) {
                 // Token is invalid or expired
-                console.log('Token invalid (401/403) in baptism fetch');
+                console.log('Token invalid (401) in baptism fetch');
                 handleTokenExpired();
                 return;
             } else if (baptismResponse.status === 404) {
@@ -200,9 +200,9 @@ async function fetchRecentActivities() {
                         <small>Record first wedding</small>
                     `;
                 }
-            } else if (weddingResponse.status === 401 || weddingResponse.status === 403) {
+            } else if (weddingResponse.status === 401) {
                 // Token is invalid or expired
-                console.log('Token invalid (401/403) in wedding fetch');
+                console.log('Token invalid (401) in wedding fetch');
                 handleTokenExpired();
                 return;
             } else if (weddingResponse.status === 404) {
@@ -244,7 +244,7 @@ async function fetchRecentActivities() {
         `;
         
         // Only redirect on actual authentication errors, not on 404s
-        if (err.message.includes('401') || err.message.includes('403')) {
+        if (err.message.includes('401')) {
             console.log('Authentication issue, redirecting to login...');
             setTimeout(() => {
                 window.location.href = 'login.html';
